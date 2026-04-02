@@ -121,13 +121,20 @@ async function loadProfessionals() {
         <td>${p.name}</td><td>${p.email}</td><td>${p.crp || '—'}</td>
         <td><span class="sa-badge sa-badge--${p.plan}">${p.plan}</span></td>
         <td><span class="sa-badge ${p.active ? 'sa-badge--active' : 'sa-badge--inactive'}">${p.active ? 'Ativo' : 'Inativo'}</span></td>
-        <td><button class="sa-btn-sm" onclick="toggleProf('${p.id}',${p.active})">${p.active ? 'Desativar' : 'Ativar'}</button></td>
+        <td><button class="sa-btn-sm" onclick="toggleProf('${p.id}',${p.active})">${p.active ? 'Desativar' : 'Ativar'}</button> <button class="sa-btn-sm sa-btn-danger" onclick="deleteProf('${p.id}','${p.name}')">Deletar</button></td>
       </tr>`).join('')}
     </tbody></table>`;
 }
 
 window.toggleProf = async (id, active) => {
   await api(`/professionals/${id}`, { method: 'PATCH', body: JSON.stringify({ active: !active }) });
+  loadProfessionals();
+};
+
+window.deleteProf = async (id, name) => {
+  if (!confirm(`Tem certeza que deseja DELETAR completamente "${name}"?\n\nTodos os dados serão apagados permanentemente.`)) return;
+  const { ok, data } = await api(`/professionals/${id}`, { method: 'DELETE' });
+  if (!ok) { alert(data.error); return; }
   loadProfessionals();
 };
 
