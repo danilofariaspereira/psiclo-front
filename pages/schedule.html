@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PSICLO — Agenda</title>
+  <link rel="icon" href="../img/fiveicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles/reset.css" />
+  <link rel="stylesheet" href="../styles/variables.css" />
+  <link rel="stylesheet" href="../styles/components.css" />
+  <link rel="stylesheet" href="../styles/layout.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <header class="app-header" id="app-header"></header>
+    <main class="app-main">
+
+      <div class="page-header">
+        <h1 class="page-title">Agenda</h1>
+        <button class="btn btn--primary" id="btn-new-appt">+ Novo agendamento</button>
+      </div>
+
+      <div class="schedule-layout">
+        <!-- Calendário -->
+        <div class="card">
+          <div id="calendar-container"></div>
+        </div>
+
+        <!-- Slots do dia selecionado -->
+        <div class="card">
+          <p class="card__title" id="slots-title">Selecione uma data</p>
+          <div id="slots-container" class="slots-grid"></div>
+        </div>
+      </div>
+
+      <!-- Agendamentos do dia -->
+      <div class="card" style="margin-top:1.5rem">
+        <p class="card__title">Agendamentos do dia</p>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>Horário</th><th>Cliente</th><th>Modalidade</th><th>Status</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="appt-body">
+              <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Selecione uma data no calendário.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+  <div id="toast-container" aria-live="polite"></div>
+  <script type="module" src="../pages/schedule.js"></script>
+</body>
+</html>

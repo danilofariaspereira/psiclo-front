@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PSICLO — Financeiro</title>
+  <link rel="icon" href="../img/fiveicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles/reset.css" />
+  <link rel="stylesheet" href="../styles/variables.css" />
+  <link rel="stylesheet" href="../styles/components.css" />
+  <link rel="stylesheet" href="../styles/layout.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <header class="app-header" id="app-header"></header>
+    <main class="app-main">
+
+      <div class="page-header">
+        <h1 class="page-title">Financeiro</h1>
+        <button class="btn btn--primary" id="btn-new-payment">+ Novo pagamento</button>
+      </div>
+
+      <!-- Resumo -->
+      <div class="stats-grid" id="financial-stats">
+        <div class="stat-card">
+          <p class="stat-card__label">Recebido</p>
+          <p class="stat-card__value stat-card__value--green" id="f-paid">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-card__label">Pendente</p>
+          <p class="stat-card__value stat-card__value--yellow" id="f-pending">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-card__label">Vencido</p>
+          <p class="stat-card__value stat-card__value--red" id="f-overdue">—</p>
+        </div>
+      </div>
+
+      <!-- Filtro -->
+      <div style="margin-bottom:1rem;display:flex;gap:.5rem">
+        <select id="filter-payment-status" class="form-select" style="width:auto">
+          <option value="">Todos</option>
+          <option value="pending">Pendente</option>
+          <option value="paid">Pago</option>
+          <option value="overdue">Vencido</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Valor</th>
+                <th>Vencimento</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="payments-body">
+              <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+  <div id="toast-container" aria-live="polite"></div>
+  <script type="module" src="../pages/financial.js"></script>
+</body>
+</html>

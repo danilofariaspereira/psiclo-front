@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PSICLO — Dashboard</title>
+  <link rel="icon" href="../img/fiveicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles/reset.css" />
+  <link rel="stylesheet" href="../styles/variables.css" />
+  <link rel="stylesheet" href="../styles/components.css" />
+  <link rel="stylesheet" href="../styles/layout.css" />
+</head>
+<body>
+  <div class="app-layout">
+
+    <aside class="sidebar" id="sidebar" aria-label="Menu lateral"></aside>
+
+    <header class="app-header" id="app-header"></header>
+
+    <main class="app-main" id="main-content">
+
+      <!-- Stats -->
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card">
+          <p class="stat-card__label">Leads novos</p>
+          <p class="stat-card__value" id="stat-leads">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-card__label">Clientes ativos</p>
+          <p class="stat-card__value" id="stat-clients">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-card__label">Sessões hoje</p>
+          <p class="stat-card__value" id="stat-today">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-card__label">Recebido (mês)</p>
+          <p class="stat-card__value stat-card__value--green" id="stat-paid">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-card__label">Pendente</p>
+          <p class="stat-card__value stat-card__value--yellow" id="stat-pending">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-card__label">Vencido</p>
+          <p class="stat-card__value stat-card__value--red" id="stat-overdue">—</p>
+        </div>
+      </div>
+
+      <!-- Próximas sessões -->
+      <div class="card">
+        <p class="card__title">Próximas sessões</p>
+        <div class="table-wrapper">
+          <table class="table" id="upcoming-table">
+            <thead>
+              <tr>
+                <th>Horário</th>
+                <th>Cliente</th>
+                <th>Modalidade</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="upcoming-body">
+              <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="toast-container" aria-live="polite"></div>
+
+  <script type="module" src="../pages/dashboard.js"></script>
+</body>
+</html>

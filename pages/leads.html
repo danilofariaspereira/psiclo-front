@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PSICLO — Leads</title>
+  <link rel="icon" href="../img/fiveicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles/reset.css" />
+  <link rel="stylesheet" href="../styles/variables.css" />
+  <link rel="stylesheet" href="../styles/components.css" />
+  <link rel="stylesheet" href="../styles/layout.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <header class="app-header" id="app-header"></header>
+    <main class="app-main">
+
+      <div class="page-header">
+        <h1 class="page-title">Leads</h1>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <select id="filter-status" class="form-select" style="width:auto">
+            <option value="">Todos</option>
+            <option value="new">Novos</option>
+            <option value="contacted">Contactados</option>
+            <option value="converted">Convertidos</option>
+            <option value="lost">Perdidos</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Telefone</th>
+                <th>E-mail</th>
+                <th>Origem</th>
+                <th>Status</th>
+                <th>Data</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="leads-body">
+              <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+  <div id="toast-container" aria-live="polite"></div>
+  <script type="module" src="../pages/leads.js"></script>
+</body>
+</html>
