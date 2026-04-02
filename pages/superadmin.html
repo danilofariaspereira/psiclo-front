@@ -7,43 +7,79 @@
   <link rel="icon" type="image/png" href="../img/fiveicon.png" />
   <link rel="stylesheet" href="../styles/reset.css" />
   <link rel="stylesheet" href="../styles/variables.css" />
-  <link rel="stylesheet" href="../styles/layout.css" />
-  <link rel="stylesheet" href="../styles/components.css" />
   <link rel="stylesheet" href="../styles/superadmin.css" />
 </head>
 <body class="sa-body">
 
-  <!-- LOGIN DO SUPERADMIN -->
+  <!-- TELA DE LOGIN -->
   <div id="saLoginScreen" class="sa-login">
     <div class="sa-login__card">
       <img src="../img/logo-psiclo.png" alt="PSICLO" class="sa-login__logo" />
       <h1 class="sa-login__title">Superadmin</h1>
-      <p class="sa-login__sub">Acesso restrito</p>
+      <p class="sa-login__sub">Acesso restrito à plataforma</p>
       <div class="sa-field">
-        <label>Senha de acesso</label>
-        <input type="password" id="saSecretInput" placeholder="••••••••••" />
+        <label>E-mail</label>
+        <input type="email" id="saEmail" placeholder="seu@email.com" autocomplete="email" />
+      </div>
+      <div class="sa-field">
+        <label>Senha</label>
+        <input type="password" id="saPassword" placeholder="••••••••" autocomplete="current-password" />
       </div>
       <p class="sa-error" id="saLoginError"></p>
-      <button class="btn-primary btn-full" id="saLoginBtn">Entrar</button>
+      <button class="sa-btn-primary" id="saLoginBtn">Entrar</button>
     </div>
   </div>
 
-  <!-- PAINEL SUPERADMIN -->
-  <div id="saPanel" class="sa-panel" style="display:none">
+  <!-- MODAL: PRIMEIRO ACESSO -->
+  <div class="sa-overlay" id="saFirstAccessModal" style="display:none">
+    <div class="sa-modal">
+      <h3 class="sa-modal__title">Bem-vindo ao PSICLO!</h3>
+      <p class="sa-modal__sub">Crie uma nova senha para sua conta de superadmin.</p>
+      <div class="sa-field">
+        <label>Nova senha *</label>
+        <input type="password" id="saNewPass" placeholder="Mínimo 6 caracteres" />
+      </div>
+      <div class="sa-field">
+        <label>Confirmar senha *</label>
+        <input type="password" id="saConfirmPass" placeholder="Repita a senha" />
+      </div>
+      <p class="sa-error" id="saFirstAccessError"></p>
+      <button class="sa-btn-primary sa-btn-full" id="saSavePassBtn">Salvar senha</button>
+    </div>
+  </div>
+
+  <!-- PAINEL PRINCIPAL -->
+  <div id="saPanel" style="display:none">
     <header class="sa-header">
       <img src="../img/logo-psiclo.png" alt="PSICLO" class="sa-header__logo" />
       <span class="sa-header__title">Painel Superadmin</span>
+      <span class="sa-header__user" id="saUserName"></span>
       <button class="sa-header__logout" id="saLogoutBtn">Sair</button>
     </header>
 
     <main class="sa-main">
-      <div class="sa-toolbar">
-        <h2 class="sa-section-title">Profissionais</h2>
-        <button class="btn-primary" id="saNewProfBtn">+ Novo profissional</button>
+      <!-- Tabs -->
+      <div class="sa-tabs">
+        <button class="sa-tab active" data-tab="professionals">Profissionais</button>
+        <button class="sa-tab" data-tab="superadmins">Superadmins</button>
       </div>
 
-      <div id="saProfList" class="sa-table-wrap">
-        <p class="sa-loading">Carregando...</p>
+      <!-- Tab: Profissionais -->
+      <div id="tabProfessionals" class="sa-tab-content">
+        <div class="sa-toolbar">
+          <h2 class="sa-section-title">Profissionais cadastrados</h2>
+          <button class="sa-btn-primary" id="saNewProfBtn">+ Novo profissional</button>
+        </div>
+        <div id="saProfList" class="sa-table-wrap"></div>
+      </div>
+
+      <!-- Tab: Superadmins -->
+      <div id="tabSuperadmins" class="sa-tab-content" style="display:none">
+        <div class="sa-toolbar">
+          <h2 class="sa-section-title">Superadmins</h2>
+          <button class="sa-btn-primary" id="saNewSaBtn">+ Novo superadmin</button>
+        </div>
+        <div id="saSaList" class="sa-table-wrap"></div>
       </div>
     </main>
   </div>
@@ -51,43 +87,61 @@
   <!-- MODAL: NOVO PROFISSIONAL -->
   <div class="sa-overlay" id="saNewProfModal" style="display:none">
     <div class="sa-modal">
-      <button class="sa-modal__close" id="saModalClose">✕</button>
+      <button class="sa-modal__close" id="saCloseProfModal">✕</button>
       <h3 class="sa-modal__title">Novo profissional</h3>
-      <p class="sa-modal__sub">A senha padrão será <strong>123456</strong>. O profissional deverá alterá-la no primeiro acesso.</p>
-
-      <div class="sa-field">
-        <label>Nome completo *</label>
-        <input type="text" id="saName" placeholder="Ex: Júlia Vidal" />
-      </div>
-      <div class="sa-field">
-        <label>E-mail *</label>
-        <input type="email" id="saEmail" placeholder="julia@email.com" />
+      <p class="sa-modal__sub">Senha padrão: <strong>123456</strong>. O profissional deverá alterá-la no primeiro acesso.</p>
+      <div class="sa-field-row">
+        <div class="sa-field">
+          <label>Nome *</label>
+          <input type="text" id="profName" placeholder="Nome completo" />
+        </div>
+        <div class="sa-field">
+          <label>E-mail *</label>
+          <input type="email" id="profEmail" placeholder="email@exemplo.com" />
+        </div>
       </div>
       <div class="sa-field-row">
         <div class="sa-field">
           <label>CRP</label>
-          <input type="text" id="saCrp" placeholder="05/79715" />
+          <input type="text" id="profCrp" placeholder="05/00000" />
         </div>
         <div class="sa-field">
           <label>Telefone</label>
-          <input type="tel" id="saPhone" placeholder="(21) 99999-9999" />
+          <input type="tel" id="profPhone" placeholder="(21) 99999-9999" />
         </div>
       </div>
       <div class="sa-field">
         <label>Plano</label>
-        <select id="saPlan">
+        <select id="profPlan">
           <option value="free">Free</option>
           <option value="pro">Pro</option>
           <option value="enterprise">Enterprise</option>
         </select>
       </div>
-
-      <p class="sa-error" id="saModalError"></p>
-      <button class="btn-primary btn-full" id="saCreateBtn">Criar profissional</button>
+      <p class="sa-error" id="profError"></p>
+      <button class="sa-btn-primary sa-btn-full" id="saCreateProfBtn">Criar profissional</button>
     </div>
   </div>
 
-  <script src="../services/superadmin.service.js" type="module"></script>
+  <!-- MODAL: NOVO SUPERADMIN -->
+  <div class="sa-overlay" id="saNewSaModal" style="display:none">
+    <div class="sa-modal">
+      <button class="sa-modal__close" id="saCloseSaModal">✕</button>
+      <h3 class="sa-modal__title">Novo superadmin</h3>
+      <p class="sa-modal__sub">Senha padrão: <strong>123456</strong>.</p>
+      <div class="sa-field">
+        <label>Nome *</label>
+        <input type="text" id="saNewName" placeholder="Nome completo" />
+      </div>
+      <div class="sa-field">
+        <label>E-mail *</label>
+        <input type="email" id="saNewEmail" placeholder="email@exemplo.com" />
+      </div>
+      <p class="sa-error" id="saNewError"></p>
+      <button class="sa-btn-primary sa-btn-full" id="saCreateSaBtn">Criar superadmin</button>
+    </div>
+  </div>
+
   <script src="superadmin.js" type="module"></script>
 </body>
 </html>
