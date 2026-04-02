@@ -1,0 +1,56 @@
+:root {
+  /* Cores principais — baseadas no design da Júlia Vidal */
+  --color-primary:       #3a9e5f;
+  --color-primary-dark:  #2d7a49;
+  --color-primary-light: #6dc98a;
+  --color-secondary:     #4ab8a0;
+  --color-accent:        #f0c040;
+
+  /* Neutros */
+  --color-bg:            #f5f7f5;
+  --color-surface:       #ffffff;
+  --color-border:        #dde8dd;
+  --color-text:          #1e2e1e;
+  --color-text-muted:    #6b7f6b;
+
+  /* Status */
+  --color-success:       #3a9e5f;
+  --color-warning:       #e6a817;
+  --color-error:         #d94f4f;
+  --color-info:          #3a7bd5;
+
+  /* Pagamentos */
+  --color-paid:          #3a9e5f;
+  --color-pending:       #e6a817;
+  --color-overdue:       #d94f4f;
+
+  /* Tipografia */
+  --font-sans:    'Inter', system-ui, sans-serif;
+  --font-serif:   'Playfair Display', Georgia, serif;
+
+  /* Espaçamentos */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  40px;
+  --space-2xl: 64px;
+
+  /* Bordas */
+  --radius-sm:  6px;
+  --radius-md:  12px;
+  --radius-lg:  20px;
+  --radius-full: 9999px;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.10);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,.12);
+
+  /* Sidebar */
+  --sidebar-width: 240px;
+  --header-height: 60px;
+
+  /* Transições */
+  --transition: 200ms ease;
+}
