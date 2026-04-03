@@ -5,6 +5,25 @@ let currentEmail = '';
 const $ = (id) => document.getElementById(id);
 const headers = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` });
 
+// ── Tema ─────────────────────────────────────────────────────
+const savedTheme = localStorage.getItem('sa-theme') || 'light';
+if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+updateThemeBtn(savedTheme);
+
+$('saThemeToggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('sa-theme', next);
+  updateThemeBtn(next);
+});
+
+function updateThemeBtn(theme) {
+  const btn = $('saThemeToggle');
+  if (!btn) return;
+  btn.textContent = theme === 'dark' ? '☀️ Claro' : '🌙 Dark';
+}
+
 async function api(path, opts = {}) {
   const res = await fetch(`${API}${path}`, { headers: headers(), ...opts });
   const data = await res.json();
