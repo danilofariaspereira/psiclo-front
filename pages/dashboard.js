@@ -60,29 +60,28 @@ async function init() {
 function setupRealtime(professionalId) {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Escuta novos leads
+  // Escuta novos leads — filtra no cliente pelo professional_id
   supabase
     .channel('leads-realtime')
     .on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
       table: 'leads',
-      filter: `professional_id=eq.${professionalId}`,
     }, (payload) => {
+      if (payload.new.professional_id !== professionalId) return;
       showNotification(`🔔 Novo lead: ${payload.new.name}`);
       loadStats();
     })
     .subscribe();
 
-  // Escuta novos agendamentos
+  // Escuta novos agendamentos — filtra no cliente pelo professional_id
   supabase
     .channel('appointments-realtime')
     .on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
       table: 'appointments',
-      filter: `professional_id=eq.${professionalId}`,
-    }, (payload) => {
+    }, () => {
       showNotification(`📅 Novo agendamento!`);
       loadStats();
       loadUpcoming();
