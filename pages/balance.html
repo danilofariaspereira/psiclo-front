@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PSICLO — Balanço</title>
+  <link rel="icon" href="../img/fiveicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../styles/reset.css" />
+  <link rel="stylesheet" href="../styles/variables.css" />
+  <link rel="stylesheet" href="../styles/components.css" />
+  <link rel="stylesheet" href="../styles/layout.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <header class="app-header" id="app-header"></header>
+    <main class="app-main">
+
+      <div class="page-header">
+        <h1 class="page-title">Balanço financeiro</h1>
+        <button class="btn btn--ghost" id="btn-set-goal">🎯 Definir meta</button>
+      </div>
+
+      <!-- Cards resumo -->
+      <div class="stats-grid" style="margin-bottom:var(--space-xl)">
+        <div class="stat-card">
+          <p class="stat-card__label">Receita do mês</p>
+          <p class="stat-card__value stat-card__value--green" id="b-revenue">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-card__label">Despesas fixas</p>
+          <p class="stat-card__value stat-card__value--red" id="b-expenses">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-card__label">Lucro líquido</p>
+          <p class="stat-card__value" id="b-profit">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="stat-card__label">Meta mensal</p>
+          <p class="stat-card__value" id="b-goal">—</p>
+        </div>
+      </div>
+
+      <!-- Gráfico meta -->
+      <div class="card" style="margin-bottom:var(--space-xl)">
+        <p class="card__title">Progresso da meta</p>
+        <div style="max-width:400px;margin:1rem auto">
+          <canvas id="chart-goal"></canvas>
+        </div>
+        <p id="goal-msg" style="text-align:center;font-size:.9rem;color:var(--color-text-muted);margin-top:.5rem"></p>
+      </div>
+
+      <!-- Despesas fixas -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-md)">
+          <p class="card__title" style="margin:0">Despesas fixas</p>
+          <button class="btn btn--primary btn--sm" id="btn-add-expense">+ Adicionar</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>Nome</th><th>Categoria</th><th>Valor</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="expenses-body">
+              <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+  <div id="toast-container" aria-live="polite"></div>
+  <script type="module" src="../pages/balance.js"></script>
+</body>
+</html>
