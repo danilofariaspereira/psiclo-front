@@ -42,18 +42,9 @@
   border-bottom: 1px solid var(--dash-sidebar-border);
   flex-shrink: 0;
   padding: 0 var(--space-md);
-  gap: var(--space-sm);
 }
-.sidebar__logo img { height: 32px; filter: brightness(0) invert(1); }
-.sidebar__logo-name {
-  font-size: .82rem;
-  font-weight: 700;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 130px;
-}
+.sidebar__logo img { height: 36px; filter: brightness(0) invert(1); }
+.sidebar__logo-name { display: none; }
 
 .sidebar__nav { flex: 1; padding: var(--space-sm) 0; overflow-y: auto; scrollbar-width: none; }
 .sidebar__nav::-webkit-scrollbar { display: none; }
@@ -134,16 +125,18 @@
   justify-content: center;
   gap: 6px;
   padding: 10px var(--space-sm);
-  color: var(--dash-sidebar-text-sub);
+  color: #1a237e;
+  background: rgba(255,255,255,0.9);
   font-size: .78rem;
-  font-weight: 500;
-  background: none;
+  font-weight: 600;
   border: none;
   cursor: pointer;
   transition: background var(--transition), color var(--transition);
+  border-top: 1px solid var(--dash-sidebar-border);
 }
-.sidebar__footer-btn:hover { background: var(--dash-sidebar-hover-bg); color: #fff; }
-.sidebar__footer-btn--danger:hover { color: #fca5a5; }
+.sidebar__footer-btn:first-child { border-right: 1px solid var(--dash-sidebar-border); }
+.sidebar__footer-btn:hover { background: #1a237e; color: #fff; }
+.sidebar__footer-btn--danger:hover { background: #1565c0; color: #fff; }
 .sidebar__footer-btn svg { flex-shrink: 0; }
 
 /* ── HEADER ── */
@@ -162,7 +155,25 @@
 }
 .app-header__title { font-size: 1rem; font-weight: 700; color: var(--color-text); }
 .app-header__actions { display: flex; align-items: center; gap: var(--space-md); }
-.header__user { font-size: .85rem; color: var(--color-text-muted); font-weight: 500; }
+
+.header__profile { display: flex; align-items: center; gap: var(--space-sm); }
+.header__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a237e, #0288d1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: .78rem;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.header__profile-info { display: flex; flex-direction: column; }
+.header__profile-name { font-size: .85rem; font-weight: 600; color: var(--color-text); }
+.header__profile-role { font-size: .7rem; color: var(--color-text-muted); }
 
 /* ── MAIN CONTENT ── */
 .app-main {

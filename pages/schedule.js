@@ -49,6 +49,24 @@ async function init() {
 
   document.getElementById('btn-new-appt').addEventListener('click', openNewApptModal);
   document.getElementById('btn-config').addEventListener('click', openConfigModal);
+
+  // Botão bloquear dia — aparece quando uma data está selecionada
+  document.getElementById('btn-block-day').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-block-day');
+    const date = btn.dataset.date;
+    if (!date) return;
+    const isBlocked = btn.dataset.blocked === 'true';
+    const action = isBlocked ? 'desbloquear' : 'bloquear';
+    if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} o dia ${new Date(date + 'T12:00:00').toLocaleDateString('pt-BR')}?`)) return;
+    try {
+      await apiFetch('/schedule/block', {
+        method: isBlocked ? 'DELETE' : 'POST',
+        body: JSON.stringify({ date, reason: 'Folga' }),
+      });
+      notify(`Dia ${action}ado com sucesso!`, 'success');
+      loadDay(new Date(date + 'T12:00:00'));
+    } catch { notify(`Erro ao ${action} dia.`, 'error'); }
+  });
 }
 
 async function openConfigModal() {
@@ -106,6 +124,11 @@ async function loadDay(date) {
   const dateStr = dateUtils.toInputDate(date.toISOString());
   document.getElementById('slots-title').textContent =
     `Horários — ${date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}`;
+
+  // Mostra botão de bloquear dia
+  const blockBtn = document.getElementById('btn-block-day');
+  blockBtn.style.display = 'inline-flex';
+  blockBtn.dataset.date = dateStr;
 
   // Carrega slots e agendamentos em paralelo
   const [slotsData, appts] = await Promise.all([

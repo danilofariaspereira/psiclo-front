@@ -10,24 +10,36 @@ export function renderHeader(title) {
     </button>
     <span class="app-header__title">${title}</span>
     <div class="app-header__actions">
-      <span class="header__user" id="header-user">—</span>
+      <div class="header__profile" id="header-profile">
+        <div class="header__avatar" id="header-avatar">?</div>
+        <div class="header__profile-info">
+          <span class="header__profile-name" id="header-user">—</span>
+          <span class="header__profile-role">Psicólogo(a)</span>
+        </div>
+      </div>
     </div>
   `;
 
-  // Mobile: toggle sidebar
   document.getElementById('menu-toggle')?.addEventListener('click', () => {
     const sidebar = document.getElementById('sidebar');
     const isOpen = sidebar.classList.toggle('sidebar--open');
     document.getElementById('menu-toggle').setAttribute('aria-expanded', isOpen);
   });
 
-  // Preenche nome do usuário
-  const user = store.get('professional');
-  if (user) {
-    document.getElementById('header-user').textContent = user.name || user.email;
+  function updateProfile(prof) {
+    if (!prof) return;
+    const nameEl = document.getElementById('header-user');
+    const avatarEl = document.getElementById('header-avatar');
+    if (nameEl) nameEl.textContent = prof.name || prof.email;
+    if (avatarEl) {
+      if (prof.avatar_url) {
+        avatarEl.innerHTML = `<img src="${prof.avatar_url}" alt="foto" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+      } else {
+        avatarEl.textContent = prof.name ? prof.name.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase() : '?';
+      }
+    }
   }
 
-  store.subscribe('professional', (prof) => {
-    if (prof) document.getElementById('header-user').textContent = prof.name || prof.email;
-  });
+  updateProfile(store.get('professional'));
+  store.subscribe('professional', updateProfile);
 }
