@@ -10,12 +10,11 @@ const API = 'https://psiclo-back.vercel.app/api';
 let scheduleConfig = null;
 
 async function apiFetch(path, options = {}) {
-  const token = authService.getToken();
   const res = await fetch(`${API}${path}`, {
     ...options,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
       ...options.headers,
     },
   });

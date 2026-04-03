@@ -8,9 +8,8 @@ import { dateUtils } from '../utils/date.js';
 const API = 'https://psiclo-back.vercel.app/api';
 
 async function apiFetch(path) {
-  const token = authService.getToken();
   const res = await fetch(`${API}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
   });
   if (!res.ok) throw new Error(`Erro ${res.status}`);
   return res.json();

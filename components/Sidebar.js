@@ -101,7 +101,6 @@ function showChangePasswordModal() {
 
     btn.disabled = true; btn.textContent = 'Salvando...';
 
-    const prof = authService.getProfessional();
     const res = await fetch(`${API_URL}/admin/professionals/change-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

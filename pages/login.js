@@ -100,6 +100,7 @@ function showFirstAccessModal(userEmail) {
       const res = await fetch(`${API_URL}/admin/professionals/change-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email: userEmail, new_password: newPass }),
       });
       const data = await res.json();
