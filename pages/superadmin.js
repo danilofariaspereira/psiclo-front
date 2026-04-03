@@ -19,9 +19,12 @@ $('saThemeToggle').addEventListener('click', () => {
 });
 
 function updateThemeBtn(theme) {
-  const btn = $('saThemeToggle');
-  if (!btn) return;
-  btn.textContent = theme === 'dark' ? '☀️ Claro' : '🌙 Dark';
+  const sun = $('iconSun');
+  const moon = $('iconMoon');
+  if (!sun || !moon) return;
+  // no tema claro mostra lua (para ir pro dark), no dark mostra sol (para ir pro claro)
+  sun.style.display = theme === 'dark' ? 'block' : 'none';
+  moon.style.display = theme === 'dark' ? 'none' : 'block';
 }
 
 async function api(path, opts = {}) {

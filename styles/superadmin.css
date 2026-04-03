@@ -92,8 +92,8 @@
 
 /* ── Login ── */
 .sa-login { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; position: relative; }
-.sa-theme-toggle { position: absolute; top: 1.5rem; right: 1.5rem; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 50px; padding: .35rem .75rem; cursor: pointer; display: flex; align-items: center; gap: .4rem; color: #fff; font-size: .82rem; font-weight: 600; backdrop-filter: blur(8px); transition: background .2s; }
-.sa-theme-toggle:hover { background: rgba(255,255,255,0.25); }
+.sa-theme-toggle { position: absolute; top: 1.5rem; right: 1.5rem; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff; backdrop-filter: blur(8px); transition: background .2s; }
+.sa-theme-toggle:hover { background: rgba(255,255,255,0.3); }
 [data-theme="dark"] .sa-theme-toggle { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); }
 .sa-login__card { background: var(--surface); border-radius: 20px; padding: 2.5rem 2rem; width: 100%; max-width: 380px; box-shadow: 0 16px 48px rgba(0,0,0,.3); text-align: center; }
 .sa-login__logo { width: 130px; margin: 0 auto 1rem; display: block; }
