@@ -195,23 +195,52 @@ async function loadOverview() {
   const labels = Object.keys(byMonth);
   const values = Object.values(byMonth);
 
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-  const textColor = isDark ? '#94a3b8' : '#64748b';
-
   if (chartGrowth) chartGrowth.destroy();
   chartGrowth = new Chart($('chartGrowth'), {
     type: 'bar',
-    data: { labels, datasets: [{ label: 'Profissionais', data: values, backgroundColor: '#6366f1', borderRadius: 6 }] },
-    options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: textColor }, grid: { color: gridColor } }, y: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } } } }
+    data: {
+      labels,
+      datasets: [{
+        label: 'Profissionais',
+        data: values,
+        backgroundColor: 'rgba(2,136,209,0.7)',
+        borderColor: '#0288d1',
+        borderWidth: 1,
+        borderRadius: 5,
+        hoverBackgroundColor: '#29b6f6',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } },
+        y: { ticks: { color: 'rgba(255,255,255,0.45)', stepSize: 1, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } }
+      }
+    }
   });
 
-  // Gráfico pizza ativos/inativos
   if (chartStatus) chartStatus.destroy();
   chartStatus = new Chart($('chartStatus'), {
     type: 'doughnut',
-    data: { labels: ['Ativos', 'Inativos'], datasets: [{ data: [active, inactive || 0.001], backgroundColor: ['#22c55e', '#ef4444'], borderWidth: 0 }] },
-    options: { plugins: { legend: { labels: { color: textColor } } }, cutout: '65%' }
+    data: {
+      labels: ['Ativos', 'Inativos'],
+      datasets: [{
+        data: [active, inactive || 0.001],
+        backgroundColor: ['#0288d1', '#1a237e'],
+        borderColor: ['#0277bd', '#151c6e'],
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { labels: { color: 'rgba(255,255,255,0.65)', font: { size: 11 }, boxWidth: 10, padding: 14 } }
+      },
+      cutout: '70%'
+    }
   });
 }
 
@@ -310,10 +339,6 @@ async function loadFinancial() {
   const labels = Object.keys(byMonth);
   const values = Object.values(byMonth);
 
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-  const textColor = isDark ? '#94a3b8' : '#64748b';
-
   if (chartRevenue) chartRevenue.destroy();
   chartRevenue = new Chart($('chartRevenue'), {
     type: 'line',
@@ -322,18 +347,24 @@ async function loadFinancial() {
       datasets: [{
         label: 'Receita (R$)',
         data: values.length ? values : [0],
-        borderColor: '#22c55e',
-        backgroundColor: 'rgba(34,197,94,0.1)',
+        borderColor: '#0288d1',
+        backgroundColor: 'rgba(2,136,209,0.12)',
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: '#22c55e',
+        pointBackgroundColor: '#29b6f6',
+        pointBorderColor: '#0288d1',
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        borderWidth: 2,
       }]
     },
     options: {
+      responsive: true,
+      maintainAspectRatio: true,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { color: textColor }, grid: { color: gridColor } },
-        y: { ticks: { color: textColor, callback: v => `R$ ${v.toFixed(0)}` }, grid: { color: gridColor } }
+        x: { ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } },
+        y: { ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 }, callback: v => `R$ ${v.toFixed(0)}` }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } }
       }
     }
   });
