@@ -157,6 +157,14 @@ function renderSlots(slots) {
   `).join('');
 }
 
+const STATUS_PT = {
+  scheduled: 'Agendado',
+  confirmed: 'Confirmado',
+  completed: 'Concluído',
+  cancelled: 'Cancelado',
+  no_show: 'Não compareceu',
+};
+
 function renderAppts(appts) {
   const tbody = document.getElementById('appt-body');
   if (!appts.length) {
@@ -168,11 +176,11 @@ function renderAppts(appts) {
       <td>${dateUtils.formatTime(a.scheduled_at)}</td>
       <td>${a.clients?.name ?? '—'}</td>
       <td>${a.modality === 'online' ? '🌐 Online' : '🏢 Presencial'}</td>
-      <td><span class="badge badge--${a.status}">${a.status}</span></td>
+      <td><span class="badge badge--${a.status}">${STATUS_PT[a.status] || a.status}</span></td>
       <td>
         <select class="form-select" style="padding:4px 8px;font-size:.8rem" onchange="updateApptStatus('${a.id}', this.value)">
-          ${['scheduled','confirmed','completed','cancelled','no_show'].map((s) =>
-            `<option value="${s}" ${a.status === s ? 'selected' : ''}>${s}</option>`
+          ${Object.entries(STATUS_PT).map(([val, label]) =>
+            `<option value="${val}" ${a.status === val ? 'selected' : ''}>${label}</option>`
           ).join('')}
         </select>
       </td>
