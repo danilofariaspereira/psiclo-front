@@ -22,7 +22,14 @@ function updateThemeBtn(theme) {
   const sun = $('iconSun');
   const moon = $('iconMoon');
   if (!sun || !moon) return;
-  // no tema claro mostra lua (para ir pro dark), no dark mostra sol (para ir pro claro)
+  sun.style.display = theme === 'dark' ? 'block' : 'none';
+  moon.style.display = theme === 'dark' ? 'none' : 'block';
+}
+
+function updateThemeBtnPanel(theme) {
+  const sun = $('iconSunPanel');
+  const moon = $('iconMoonPanel');
+  if (!sun || !moon) return;
   sun.style.display = theme === 'dark' ? 'block' : 'none';
   moon.style.display = theme === 'dark' ? 'none' : 'block';
 }
@@ -106,9 +113,38 @@ function openPanel(name) {
   $('saPanel').style.display = 'flex';
   $('saUserName').textContent = name;
 
-  // Avatar com iniciais
+  // Avatar com iniciais + clique para foto
   const initials = name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   $('saAvatarSidebar').textContent = initials;
+
+  const savedPhoto = localStorage.getItem('sa-avatar');
+  if (savedPhoto) {
+    $('saAvatarSidebar').innerHTML = `<img src="${savedPhoto}" alt="avatar" />`;
+  }
+
+  $('saAvatarSidebar').addEventListener('click', () => $('saAvatarInput').click());
+  $('saAvatarInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      localStorage.setItem('sa-avatar', ev.target.result);
+      $('saAvatarSidebar').innerHTML = `<img src="${ev.target.result}" alt="avatar" />`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Toggle tema no painel
+  $('saThemeTogglePanel').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('sa-theme', next);
+    updateThemeBtn(next);
+    updateThemeBtnPanel(next);
+  });
+
+  updateThemeBtnPanel(localStorage.getItem('sa-theme') || 'light');
 
   loadOverview();
 }
