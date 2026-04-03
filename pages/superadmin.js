@@ -348,6 +348,7 @@ async function loadProfessionals() {
         <td><span class="sa-badge sa-badge--${p.plan}">${p.plan}</span></td>
         <td><span class="sa-badge ${p.active ? 'sa-badge--active' : 'sa-badge--inactive'}">${p.active ? 'Ativo' : 'Inativo'}</span></td>
         <td style="text-align:center">
+          <button class="sa-btn-sm" onclick="editProf('${p.id}','${p.name}','${p.email}')">Editar</button>
           <button class="sa-btn-sm" onclick="toggleProf('${p.id}',${p.active})">${p.active ? 'Desativar' : 'Ativar'}</button>
           <button class="sa-btn-sm sa-btn-warning" onclick="resetProfPass('${p.id}','${p.name}')">Resetar senha</button>
           <button class="sa-btn-sm sa-btn-danger" onclick="deleteProf('${p.id}','${p.name}')">Excluir</button>
@@ -380,7 +381,63 @@ async function loadDeletedProfessionals() {
     </tbody></table>`;
 }
 
-window.toggleProf = async (id, active) => {
+window.editProf = (id, name, email) => {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;';
+  overlay.innerHTML = `
+    <div class="sa-modal" style="max-width:400px;">
+      <h3 class="sa-modal__title">Editar — ${name}</h3>
+      <p class="sa-modal__sub">Deixe em branco o que não quiser alterar.</p>
+      <div class="sa-field">
+        <label>Novo e-mail</label>
+        <input type="email" id="editEmail" placeholder="${email}" value="${email}" />
+      </div>
+      <div class="sa-field">
+        <label>Nova senha</label>
+        <div class="sa-password-wrap">
+          <input type="password" id="editPass" placeholder="Deixe em branco para não alterar" />
+          <button type="button" class="sa-eye-btn" onclick="togglePass('editPass',this)" tabindex="-1">
+            <svg class="eye-open" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="eye-closed" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+      </div>
+      <p class="sa-error" id="editError"></p>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+        <button class="sa-btn-primary" style="flex:1;justify-content:center;background:rgba(255,255,255,0.15);" id="editCancel">Cancelar</button>
+        <button class="sa-btn-primary" style="flex:1;justify-content:center;" id="editSave">Salvar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  document.getElementById('editCancel').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+  document.getElementById('editSave').addEventListener('click', async () => {
+    const newEmail = document.getElementById('editEmail').value.trim();
+    const newPass = document.getElementById('editPass').value;
+    const errEl = document.getElementById('editError');
+    const btn = document.getElementById('editSave');
+
+    const body = {};
+    if (newEmail && newEmail !== email) body.email = newEmail;
+    if (newPass) {
+      if (newPass.length < 6) { errEl.textContent = 'Senha mínima de 6 caracteres.'; return; }
+      body.new_password = newPass;
+    }
+    if (!Object.keys(body).length) { errEl.textContent = 'Nenhuma alteração detectada.'; return; }
+
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    const { ok, data } = await api(`/professionals/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    btn.disabled = false; btn.textContent = 'Salvar';
+
+    if (!ok) { errEl.textContent = data.error; return; }
+    overlay.remove();
+    loadProfessionals();
+  });
+};
+
+
   await api(`/professionals/${id}`, { method: 'PATCH', body: JSON.stringify({ active: !active }) });
   loadProfessionals();
 };
