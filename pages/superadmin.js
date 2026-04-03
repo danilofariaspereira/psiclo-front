@@ -113,7 +113,7 @@ function openPanel(name) {
 $('saLogoutBtn').addEventListener('click', () => { token = ''; location.reload(); });
 
 // ── Navegação ─────────────────────────────────────────────────
-const pages = { overview: 'pageOverview', professionals: 'pageProfessionals', superadmins: 'pageSuperadmins' };
+const pages = { overview: 'pageOverview', professionals: 'pageProfessionals', superadmins: 'pageSuperadmins', financial: 'pageFinancial' };
 
 document.querySelectorAll('.sa-nav-item').forEach(item => {
   item.addEventListener('click', () => {
@@ -125,21 +125,55 @@ document.querySelectorAll('.sa-nav-item').forEach(item => {
     if (page === 'professionals') loadProfessionals();
     if (page === 'superadmins') loadSuperadmins();
     if (page === 'overview') loadOverview();
+    if (page === 'financial') loadFinancial();
   });
 });
 
 // ── Visão geral ───────────────────────────────────────────────
+let chartGrowth = null, chartStatus = null;
+
 async function loadOverview() {
   const { ok, data } = await api('/professionals');
   if (!ok) return;
+
   const total = data.length;
   const active = data.filter(p => p.active).length;
   const inactive = total - active;
   const pro = data.filter(p => p.plan === 'pro' || p.plan === 'enterprise').length;
+  const revenue = (pro * 69.90).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
   $('metricTotal').textContent = total;
   $('metricActive').textContent = active;
   $('metricInactive').textContent = inactive;
-  $('metricPro').textContent = pro;
+  $('metricRevenue').textContent = revenue;
+
+  // Gráfico crescimento por mês
+  const byMonth = {};
+  data.forEach(p => {
+    const m = new Date(p.created_at).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+    byMonth[m] = (byMonth[m] || 0) + 1;
+  });
+  const labels = Object.keys(byMonth);
+  const values = Object.values(byMonth);
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  const textColor = isDark ? '#94a3b8' : '#64748b';
+
+  if (chartGrowth) chartGrowth.destroy();
+  chartGrowth = new Chart($('chartGrowth'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Profissionais', data: values, backgroundColor: '#6366f1', borderRadius: 6 }] },
+    options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: textColor }, grid: { color: gridColor } }, y: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } } } }
+  });
+
+  // Gráfico pizza ativos/inativos
+  if (chartStatus) chartStatus.destroy();
+  chartStatus = new Chart($('chartStatus'), {
+    type: 'doughnut',
+    data: { labels: ['Ativos', 'Inativos'], datasets: [{ data: [active, inactive || 0.001], backgroundColor: ['#22c55e', '#ef4444'], borderWidth: 0 }] },
+    options: { plugins: { legend: { labels: { color: textColor } } }, cutout: '65%' }
+  });
 }
 
 // ── Profissionais ─────────────────────────────────────────────
@@ -210,6 +244,61 @@ $('saCreateProfBtn').addEventListener('click', async () => {
   loadProfessionals();
   loadOverview();
 });
+
+// ── Financeiro ────────────────────────────────────────────────
+let chartRevenue = null;
+const PLAN_PRICE = 69.90;
+
+async function loadFinancial() {
+  const { ok, data } = await api('/professionals');
+  if (!ok) return;
+
+  const active = data.filter(p => p.active && (p.plan === 'pro' || p.plan === 'enterprise')).length;
+  const monthly = active * PLAN_PRICE;
+  const annual = monthly * 12;
+
+  $('finActive').textContent = active;
+  $('finRevenue').textContent = monthly.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  $('finAnnual').textContent = annual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  // Gráfico receita por mês (baseado em quando os profissionais foram criados)
+  const byMonth = {};
+  data.filter(p => p.plan === 'pro' || p.plan === 'enterprise').forEach(p => {
+    const m = new Date(p.created_at).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
+    byMonth[m] = (byMonth[m] || 0) + PLAN_PRICE;
+  });
+
+  const labels = Object.keys(byMonth);
+  const values = Object.values(byMonth);
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  const textColor = isDark ? '#94a3b8' : '#64748b';
+
+  if (chartRevenue) chartRevenue.destroy();
+  chartRevenue = new Chart($('chartRevenue'), {
+    type: 'line',
+    data: {
+      labels: labels.length ? labels : ['Sem dados'],
+      datasets: [{
+        label: 'Receita (R$)',
+        data: values.length ? values : [0],
+        borderColor: '#22c55e',
+        backgroundColor: 'rgba(34,197,94,0.1)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#22c55e',
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: textColor }, grid: { color: gridColor } },
+        y: { ticks: { color: textColor, callback: v => `R$ ${v.toFixed(0)}` }, grid: { color: gridColor } }
+      }
+    }
+  });
+}
 
 // ── Superadmins ───────────────────────────────────────────────
 async function loadSuperadmins() {

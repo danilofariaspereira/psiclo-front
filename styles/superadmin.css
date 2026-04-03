@@ -196,3 +196,10 @@
   .sa-metrics { grid-template-columns: 1fr 1fr; }
   .sa-field-row { grid-template-columns: 1fr; }
 }
+
+/* ── Charts ── */
+.sa-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.sa-chart-card { background: var(--metric-bg); border: 1px solid var(--metric-border); border-radius: 12px; padding: 1.5rem; backdrop-filter: blur(8px); }
+.sa-chart-title { font-size: .95rem; font-weight: 700; color: var(--topbar-title); margin-bottom: .2rem; }
+.sa-chart-sub { font-size: .78rem; color: var(--sidebar-text-sub); margin-bottom: 1rem; }
+@media (max-width: 768px) { .sa-charts { grid-template-columns: 1fr; } }

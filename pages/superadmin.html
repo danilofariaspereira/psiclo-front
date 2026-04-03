@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="../styles/reset.css" />
   <link rel="stylesheet" href="../styles/variables.css" />
   <link rel="stylesheet" href="../styles/superadmin.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 </head>
 <body class="sa-body">
 
@@ -70,6 +71,10 @@
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         Superadmins
       </button>
+      <button class="sa-nav-item" data-page="financial">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Financeiro
+      </button>
 
       <div class="sa-sidebar__footer">
         <div class="sa-sidebar__user">
@@ -101,7 +106,44 @@
             <div class="sa-metric"><div class="sa-metric__label">Total profissionais</div><div class="sa-metric__value purple" id="metricTotal">—</div></div>
             <div class="sa-metric"><div class="sa-metric__label">Ativos</div><div class="sa-metric__value green" id="metricActive">—</div></div>
             <div class="sa-metric"><div class="sa-metric__label">Inativos</div><div class="sa-metric__value red" id="metricInactive">—</div></div>
-            <div class="sa-metric"><div class="sa-metric__label">Plano Pro</div><div class="sa-metric__value" id="metricPro">—</div></div>
+            <div class="sa-metric"><div class="sa-metric__label">Receita mensal</div><div class="sa-metric__value" id="metricRevenue">—</div></div>
+          </div>
+          <div class="sa-charts">
+            <div class="sa-chart-card">
+              <div class="sa-chart-title">Profissionais por mês</div>
+              <div class="sa-chart-sub">Crescimento da base desde o lançamento</div>
+              <canvas id="chartGrowth" height="120"></canvas>
+            </div>
+            <div class="sa-chart-card">
+              <div class="sa-chart-title">Ativos vs Inativos</div>
+              <div class="sa-chart-sub">Distribuição atual</div>
+              <canvas id="chartStatus" height="120"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financeiro -->
+      <div id="pageFinancial" style="display:none">
+        <div class="sa-topbar">
+          <div>
+            <div class="sa-topbar__title">Financeiro</div>
+            <div class="sa-topbar__sub">Receita da plataforma — plano Pro R$ 69,90/mês</div>
+          </div>
+        </div>
+        <div class="sa-page">
+          <div class="sa-metrics">
+            <div class="sa-metric"><div class="sa-metric__label">Assinantes ativos</div><div class="sa-metric__value green" id="finActive">—</div></div>
+            <div class="sa-metric"><div class="sa-metric__label">Receita atual/mês</div><div class="sa-metric__value" id="finRevenue">—</div></div>
+            <div class="sa-metric"><div class="sa-metric__label">Vencimento</div><div class="sa-metric__value" style="font-size:1.1rem">Dia 10–15</div></div>
+            <div class="sa-metric"><div class="sa-metric__label">Receita anual projetada</div><div class="sa-metric__value purple" id="finAnnual">—</div></div>
+          </div>
+          <div class="sa-charts">
+            <div class="sa-chart-card" style="grid-column: 1 / -1">
+              <div class="sa-chart-title">Receita mensal</div>
+              <div class="sa-chart-sub">Evolução financeira desde o lançamento</div>
+              <canvas id="chartRevenue" height="80"></canvas>
+            </div>
           </div>
         </div>
       </div>
