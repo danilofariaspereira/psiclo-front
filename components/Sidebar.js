@@ -99,10 +99,17 @@ function showChangePasswordModal() {
     if (newPass !== confirm) { errEl.textContent = 'As senhas não coincidem.'; return; }
 
     btn.disabled = true; btn.textContent = 'Salvando...';
-    const { error } = await supabase.auth.updateUser({ password: newPass });
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch('https://psiclo-back.vercel.app/api/admin/professionals/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: session.user.email, new_password: newPass }),
+    });
+    const json = await res.json();
     btn.disabled = false; btn.textContent = 'Salvar';
 
-    if (error) { errEl.textContent = error.message; return; }
+    if (!res.ok) { errEl.textContent = json.error; return; }
     overlay.remove();
     alert('Senha alterada com sucesso!');
   });
