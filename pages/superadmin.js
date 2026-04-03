@@ -1,46 +1,45 @@
 const API = 'https://psiclo-back.vercel.app/api/admin';
-let token = '';
-let currentEmail = '';
-
 const $ = (id) => document.getElementById(id);
-const headers = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` });
+
+// Todas as chamadas usam credentials: 'include' — cookie httpOnly, sem token exposto
+async function api(path, opts = {}) {
+  const res = await fetch(`${API}${path}`, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  const data = await res.json();
+  return { ok: res.ok, data };
+}
 
 // ── Tema ─────────────────────────────────────────────────────
 const savedTheme = localStorage.getItem('sa-theme') || 'light';
 if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
 updateThemeBtn(savedTheme);
 
-$('saThemeToggle').addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('data-theme') || 'light';
-  const next = current === 'dark' ? 'light' : 'dark';
+$('saThemeToggle').addEventListener('click', () => toggleTheme());
+
+function toggleTheme() {
+  const next = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('sa-theme', next);
   updateThemeBtn(next);
-});
+  updateThemeBtnPanel(next);
+}
 
 function updateThemeBtn(theme) {
-  const sun = $('iconSun');
-  const moon = $('iconMoon');
-  if (!sun || !moon) return;
-  sun.style.display = theme === 'dark' ? 'block' : 'none';
-  moon.style.display = theme === 'dark' ? 'none' : 'block';
+  const sun = $('iconSun'), moon = $('iconMoon');
+  if (sun) sun.style.display = theme === 'dark' ? 'block' : 'none';
+  if (moon) moon.style.display = theme === 'dark' ? 'none' : 'block';
 }
 
 function updateThemeBtnPanel(theme) {
-  const sun = $('iconSunPanel');
-  const moon = $('iconMoonPanel');
-  if (!sun || !moon) return;
-  sun.style.display = theme === 'dark' ? 'block' : 'none';
-  moon.style.display = theme === 'dark' ? 'none' : 'block';
+  const sun = $('iconSunPanel'), moon = $('iconMoonPanel');
+  if (sun) sun.style.display = theme === 'dark' ? 'block' : 'none';
+  if (moon) moon.style.display = theme === 'dark' ? 'none' : 'block';
 }
 
-async function api(path, opts = {}) {
-  const res = await fetch(`${API}${path}`, { headers: headers(), ...opts });
-  const data = await res.json();
-  return { ok: res.ok, data };
-}
-
-// ── Toggle senha visível ──────────────────────────────────────
+// ── Toggle olhinho ────────────────────────────────────────────
 window.togglePass = (inputId, btn) => {
   const input = $(inputId);
   const isPass = input.type === 'password';
@@ -65,6 +64,7 @@ async function doLogin() {
 
   const res = await fetch(`${API}/auth/login`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
@@ -74,12 +74,11 @@ async function doLogin() {
 
   if (!res.ok) { err.textContent = data.error || 'Erro ao fazer login.'; return; }
 
-  token = data.token;
-  currentEmail = email;
-
   if (data.first_access) {
+    // Guarda email só em memória para o fluxo de primeiro acesso
     $('saLoginScreen').style.display = 'none';
     $('saFirstAccessModal').style.display = 'flex';
+    $('saFirstAccessModal').dataset.email = data.email;
   } else {
     openPanel(data.name);
   }
@@ -90,6 +89,8 @@ $('saSavePassBtn').addEventListener('click', async () => {
   const newPass = $('saNewPass').value;
   const confirm = $('saConfirmPass').value;
   const err = $('saFirstAccessError');
+  const email = $('saFirstAccessModal').dataset.email;
+
   if (newPass.length < 6) { err.textContent = 'Mínimo 6 caracteres.'; return; }
   if (newPass !== confirm) { err.textContent = 'As senhas não coincidem.'; return; }
 
@@ -98,8 +99,9 @@ $('saSavePassBtn').addEventListener('click', async () => {
 
   const res = await fetch(`${API}/auth/change-password`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: currentEmail, new_password: newPass }),
+    body: JSON.stringify({ email, new_password: newPass }),
   });
   const data = await res.json();
   $('saSavePassBtn').disabled = false;
@@ -120,19 +122,15 @@ function openPanel(name) {
   $('saLoginScreen').style.display = 'none';
   $('saFirstAccessModal').style.display = 'none';
   $('saPanel').style.display = 'flex';
+  $('pageOverview').style.display = 'flex';
   $('saUserName').textContent = name;
 
-  // Garantir que a página overview começa como flex
-  $('pageOverview').style.display = 'flex';
-
-  // Avatar com iniciais + clique para foto
   const initials = name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   $('saAvatarSidebar').textContent = initials;
 
+  // Avatar salvo localmente é apenas uma foto de perfil — não é dado sensível
   const savedPhoto = localStorage.getItem('sa-avatar');
-  if (savedPhoto) {
-    $('saAvatarSidebar').innerHTML = `<img src="${savedPhoto}" alt="avatar" />`;
-  }
+  if (savedPhoto) $('saAvatarSidebar').innerHTML = `<img src="${savedPhoto}" alt="avatar" />`;
 
   $('saAvatarSidebar').addEventListener('click', () => $('saAvatarInput').click());
   $('saAvatarInput').addEventListener('change', (e) => {
@@ -146,24 +144,18 @@ function openPanel(name) {
     reader.readAsDataURL(file);
   });
 
-  // Toggle tema no painel
-  $('saThemeTogglePanel').addEventListener('click', () => {
-    const current = document.documentElement.getAttribute('data-theme') || 'light';
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('sa-theme', next);
-    updateThemeBtn(next);
-    updateThemeBtnPanel(next);
-  });
-
+  $('saThemeTogglePanel').addEventListener('click', toggleTheme);
   updateThemeBtnPanel(localStorage.getItem('sa-theme') || 'light');
 
   loadOverview();
 }
 
-$('saLogoutBtn').addEventListener('click', () => { token = ''; location.reload(); });
+$('saLogoutBtn').addEventListener('click', async () => {
+  await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
+  location.reload();
+});
 
-// ── Alterar senha (superadmin logado) ─────────────────────────
+// ── Alterar senha do superadmin logado ────────────────────────
 $('saChangePassBtn').addEventListener('click', () => {
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
@@ -212,16 +204,13 @@ $('saChangePassBtn').addEventListener('click', () => {
     if (newPass !== confirm) { errEl.textContent = 'As senhas não coincidem.'; return; }
 
     btn.disabled = true; btn.textContent = 'Salvando...';
-
-    const res = await fetch(`https://psiclo-back.vercel.app/api/admin/auth/change-password`, {
+    // Usa o endpoint que lê o cookie para identificar o superadmin
+    const { ok, data } = await api('/auth/change-password-me', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: currentEmail, new_password: newPass }),
+      body: JSON.stringify({ new_password: newPass }),
     });
-    const data = await res.json();
     btn.disabled = false; btn.textContent = 'Salvar';
-
-    if (!res.ok) { errEl.textContent = data.error; return; }
+    if (!ok) { errEl.textContent = data.error; return; }
     overlay.remove();
     alert('Senha alterada com sucesso!');
   });
@@ -255,68 +244,30 @@ async function loadOverview() {
   const active = data.filter(p => p.active).length;
   const inactive = total - active;
   const pro = data.filter(p => p.plan === 'pro' || p.plan === 'enterprise').length;
-  const revenue = (pro * 69.90).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   $('metricTotal').textContent = total;
   $('metricActive').textContent = active;
   $('metricInactive').textContent = inactive;
-  $('metricRevenue').textContent = revenue;
+  $('metricRevenue').textContent = (pro * 69.90).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-  // Gráfico crescimento por mês
   const byMonth = {};
   data.forEach(p => {
     const m = new Date(p.created_at).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
     byMonth[m] = (byMonth[m] || 0) + 1;
   });
-  const labels = Object.keys(byMonth);
-  const values = Object.values(byMonth);
 
   if (chartGrowth) chartGrowth.destroy();
   chartGrowth = new Chart($('chartGrowth'), {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Profissionais',
-        data: values,
-        backgroundColor: 'rgba(2,136,209,0.7)',
-        borderColor: '#0288d1',
-        borderWidth: 1,
-        borderRadius: 5,
-        hoverBackgroundColor: '#29b6f6',
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } },
-        y: { ticks: { color: 'rgba(255,255,255,0.45)', stepSize: 1, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } }
-      }
-    }
+    data: { labels: Object.keys(byMonth), datasets: [{ label: 'Profissionais', data: Object.values(byMonth), backgroundColor: 'rgba(2,136,209,0.7)', borderColor: '#0288d1', borderWidth: 1, borderRadius: 5, hoverBackgroundColor: '#29b6f6' }] },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } }, y: { ticks: { color: 'rgba(255,255,255,0.45)', stepSize: 1, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } } } }
   });
 
   if (chartStatus) chartStatus.destroy();
   chartStatus = new Chart($('chartStatus'), {
     type: 'doughnut',
-    data: {
-      labels: ['Ativos', 'Inativos'],
-      datasets: [{
-        data: [active, inactive || 0.001],
-        backgroundColor: ['#0288d1', '#1a237e'],
-        borderColor: ['#0277bd', '#151c6e'],
-        borderWidth: 2,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: { labels: { color: 'rgba(255,255,255,0.65)', font: { size: 11 }, boxWidth: 10, padding: 14 } }
-      },
-      cutout: '70%'
-    }
+    data: { labels: ['Ativos', 'Inativos'], datasets: [{ data: [active, inactive || 0.001], backgroundColor: ['#0288d1', '#1a237e'], borderColor: ['#0277bd', '#151c6e'], borderWidth: 2 }] },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: 'rgba(255,255,255,0.65)', font: { size: 11 }, boxWidth: 10, padding: 14 } } }, cutout: '70%' }
   });
 }
 
@@ -325,8 +276,8 @@ let currentProfTab = 'active';
 
 window.switchProfTab = (tab) => {
   currentProfTab = tab;
-  document.getElementById('tabActive').classList.toggle('active', tab === 'active');
-  document.getElementById('tabDeleted').classList.toggle('active', tab === 'deleted');
+  $('tabActive').classList.toggle('active', tab === 'active');
+  $('tabDeleted').classList.toggle('active', tab === 'deleted');
   tab === 'active' ? loadProfessionals() : loadDeletedProfessionals();
 };
 
@@ -339,22 +290,17 @@ async function loadProfessionals() {
 
   el.innerHTML = `<table class="sa-table">
     <thead><tr><th>Nome</th><th>E-mail</th><th>CRP</th><th>CPF</th><th>Plano</th><th>Status</th><th style="text-align:center">Ações</th></tr></thead>
-    <tbody>${data.map(p => `
-      <tr>
-        <td>${p.name}</td>
-        <td>${p.email}</td>
-        <td>${p.crp || '—'}</td>
-        <td>${p.cpf || '—'}</td>
-        <td><span class="sa-badge sa-badge--${p.plan}">${p.plan}</span></td>
-        <td><span class="sa-badge ${p.active ? 'sa-badge--active' : 'sa-badge--inactive'}">${p.active ? 'Ativo' : 'Inativo'}</span></td>
-        <td style="text-align:center">
-          <button class="sa-btn-sm" onclick="editProf('${p.id}','${p.name}','${p.email}')">Editar</button>
-          <button class="sa-btn-sm" onclick="toggleProf('${p.id}',${p.active})">${p.active ? 'Desativar' : 'Ativar'}</button>
-          <button class="sa-btn-sm sa-btn-warning" onclick="resetProfPass('${p.id}','${p.name}')">Resetar senha</button>
-          <button class="sa-btn-sm sa-btn-danger" onclick="deleteProf('${p.id}','${p.name}')">Excluir</button>
-        </td>
-      </tr>`).join('')}
-    </tbody></table>`;
+    <tbody>${data.map(p => `<tr>
+      <td>${p.name}</td><td>${p.email}</td><td>${p.crp || '—'}</td><td>${p.cpf || '—'}</td>
+      <td><span class="sa-badge sa-badge--${p.plan}">${p.plan}</span></td>
+      <td><span class="sa-badge ${p.active ? 'sa-badge--active' : 'sa-badge--inactive'}">${p.active ? 'Ativo' : 'Inativo'}</span></td>
+      <td style="text-align:center">
+        <button class="sa-btn-sm" onclick="editProf('${p.id}','${p.name}','${p.email}')">Editar</button>
+        <button class="sa-btn-sm" onclick="toggleProf('${p.id}',${p.active})">${p.active ? 'Desativar' : 'Ativar'}</button>
+        <button class="sa-btn-sm sa-btn-warning" onclick="resetProfPass('${p.id}','${p.name}')">Resetar senha</button>
+        <button class="sa-btn-sm sa-btn-danger" onclick="deleteProf('${p.id}','${p.name}')">Excluir</button>
+      </td>
+    </tr>`).join('')}</tbody></table>`;
 }
 
 async function loadDeletedProfessionals() {
@@ -366,78 +312,15 @@ async function loadDeletedProfessionals() {
 
   el.innerHTML = `<table class="sa-table">
     <thead><tr><th>Nome</th><th>E-mail</th><th>CRP</th><th>CPF</th><th>Plano</th><th>Excluído em</th><th style="text-align:center">Ações</th></tr></thead>
-    <tbody>${data.map(p => `
-      <tr>
-        <td>${p.name}</td>
-        <td>${p.email}</td>
-        <td>${p.crp || '—'}</td>
-        <td>${p.cpf || '—'}</td>
-        <td><span class="sa-badge sa-badge--${p.plan}">${p.plan}</span></td>
-        <td>${new Date(p.deleted_at).toLocaleDateString('pt-BR')}</td>
-        <td style="text-align:center">
-          <button class="sa-btn-sm sa-btn-success" onclick="restoreProf('${p.id}','${p.name}')">Restaurar</button>
-        </td>
-      </tr>`).join('')}
-    </tbody></table>`;
+    <tbody>${data.map(p => `<tr>
+      <td>${p.name}</td><td>${p.email}</td><td>${p.crp || '—'}</td><td>${p.cpf || '—'}</td>
+      <td><span class="sa-badge sa-badge--${p.plan}">${p.plan}</span></td>
+      <td>${new Date(p.deleted_at).toLocaleDateString('pt-BR')}</td>
+      <td style="text-align:center"><button class="sa-btn-sm sa-btn-success" onclick="restoreProf('${p.id}','${p.name}')">Restaurar</button></td>
+    </tr>`).join('')}</tbody></table>`;
 }
 
-window.editProf = (id, name, email) => {
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;';
-  overlay.innerHTML = `
-    <div class="sa-modal" style="max-width:400px;">
-      <h3 class="sa-modal__title">Editar — ${name}</h3>
-      <p class="sa-modal__sub">Deixe em branco o que não quiser alterar.</p>
-      <div class="sa-field">
-        <label>Novo e-mail</label>
-        <input type="email" id="editEmail" placeholder="${email}" value="${email}" />
-      </div>
-      <div class="sa-field">
-        <label>Nova senha</label>
-        <div class="sa-password-wrap">
-          <input type="password" id="editPass" placeholder="Deixe em branco para não alterar" />
-          <button type="button" class="sa-eye-btn" onclick="togglePass('editPass',this)" tabindex="-1">
-            <svg class="eye-open" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            <svg class="eye-closed" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-          </button>
-        </div>
-      </div>
-      <p class="sa-error" id="editError"></p>
-      <div style="display:flex;gap:.5rem;margin-top:.5rem;">
-        <button class="sa-btn-primary" style="flex:1;justify-content:center;background:rgba(255,255,255,0.15);" id="editCancel">Cancelar</button>
-        <button class="sa-btn-primary" style="flex:1;justify-content:center;" id="editSave">Salvar</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-
-  document.getElementById('editCancel').addEventListener('click', () => overlay.remove());
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-
-  document.getElementById('editSave').addEventListener('click', async () => {
-    const newEmail = document.getElementById('editEmail').value.trim();
-    const newPass = document.getElementById('editPass').value;
-    const errEl = document.getElementById('editError');
-    const btn = document.getElementById('editSave');
-
-    const body = {};
-    if (newEmail && newEmail !== email) body.email = newEmail;
-    if (newPass) {
-      if (newPass.length < 6) { errEl.textContent = 'Senha mínima de 6 caracteres.'; return; }
-      body.new_password = newPass;
-    }
-    if (!Object.keys(body).length) { errEl.textContent = 'Nenhuma alteração detectada.'; return; }
-
-    btn.disabled = true; btn.textContent = 'Salvando...';
-    const { ok, data } = await api(`/professionals/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
-    btn.disabled = false; btn.textContent = 'Salvar';
-
-    if (!ok) { errEl.textContent = data.error; return; }
-    overlay.remove();
-    loadProfessionals();
-  });
-};
-
-
+window.toggleProf = async (id, active) => {
   await api(`/professionals/${id}`, { method: 'PATCH', body: JSON.stringify({ active: !active }) });
   loadProfessionals();
 };
@@ -453,8 +336,7 @@ window.deleteProf = async (id, name) => {
   if (!confirm(`Excluir "${name}"?\n\nOs dados serão mantidos e podem ser restaurados depois.`)) return;
   const { ok, data } = await api(`/professionals/${id}`, { method: 'DELETE' });
   if (!ok) { alert(data.error); return; }
-  loadProfessionals();
-  loadOverview();
+  loadProfessionals(); loadOverview();
 };
 
 window.restoreProf = async (id, name) => {
@@ -462,20 +344,60 @@ window.restoreProf = async (id, name) => {
   const { ok, data } = await api(`/professionals/${id}/restore`, { method: 'POST' });
   if (!ok) { alert(data.error); return; }
   alert(`"${name}" restaurado. Senha: 123456.`);
-  loadDeletedProfessionals();
-  loadOverview();
+  loadDeletedProfessionals(); loadOverview();
 };
 
+window.editProf = (id, name, email) => {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;';
+  overlay.innerHTML = `
+    <div class="sa-modal" style="max-width:400px;">
+      <h3 class="sa-modal__title">Editar — ${name}</h3>
+      <p class="sa-modal__sub">Deixe em branco o que não quiser alterar.</p>
+      <div class="sa-field"><label>Novo e-mail</label><input type="email" id="editEmail" value="${email}" /></div>
+      <div class="sa-field"><label>Nova senha</label>
+        <div class="sa-password-wrap">
+          <input type="password" id="editPass" placeholder="Deixe em branco para não alterar" />
+          <button type="button" class="sa-eye-btn" onclick="togglePass('editPass',this)" tabindex="-1">
+            <svg class="eye-open" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="eye-closed" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+      </div>
+      <p class="sa-error" id="editError"></p>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+        <button class="sa-btn-primary" style="flex:1;justify-content:center;background:rgba(255,255,255,0.15);" id="editCancel">Cancelar</button>
+        <button class="sa-btn-primary" style="flex:1;justify-content:center;" id="editSave">Salvar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.getElementById('editCancel').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('editSave').addEventListener('click', async () => {
+    const newEmail = document.getElementById('editEmail').value.trim();
+    const newPass = document.getElementById('editPass').value;
+    const errEl = document.getElementById('editError');
+    const btn = document.getElementById('editSave');
+    const body = {};
+    if (newEmail && newEmail !== email) body.email = newEmail;
+    if (newPass) { if (newPass.length < 6) { errEl.textContent = 'Senha mínima de 6 caracteres.'; return; } body.new_password = newPass; }
+    if (!Object.keys(body).length) { errEl.textContent = 'Nenhuma alteração detectada.'; return; }
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    const { ok, data } = await api(`/professionals/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    btn.disabled = false; btn.textContent = 'Salvar';
+    if (!ok) { errEl.textContent = data.error; return; }
+    overlay.remove(); loadProfessionals();
+  });
+};
+
+// ── Novo profissional ─────────────────────────────────────────
 $('saNewProfBtn').addEventListener('click', () => $('saNewProfModal').style.display = 'flex');
 $('saCloseProfModal').addEventListener('click', () => $('saNewProfModal').style.display = 'none');
 
 $('saCreateProfBtn').addEventListener('click', async () => {
-  const btn = $('saCreateProfBtn');
-  const err = $('profError');
-  const name = $('profName').value.trim();
-  const email = $('profEmail').value.trim();
+  const btn = $('saCreateProfBtn'), err = $('profError');
+  const name = $('profName').value.trim(), email = $('profEmail').value.trim();
   if (!name || !email) { err.textContent = 'Nome e e-mail obrigatórios.'; return; }
-
   btn.disabled = true; btn.textContent = 'Criando...'; err.textContent = '';
   const { ok, data } = await api('/professionals', {
     method: 'POST',
@@ -485,8 +407,7 @@ $('saCreateProfBtn').addEventListener('click', async () => {
   if (!ok) { err.textContent = data.error; return; }
   $('saNewProfModal').style.display = 'none';
   ['profName','profEmail','profCrp','profCpf','profPhone'].forEach(id => $(id).value = '');
-  loadProfessionals();
-  loadOverview();
+  loadProfessionals(); loadOverview();
 });
 
 // ── Financeiro ────────────────────────────────────────────────
@@ -496,53 +417,23 @@ const PLAN_PRICE = 69.90;
 async function loadFinancial() {
   const { ok, data } = await api('/professionals');
   if (!ok) return;
-
   const active = data.filter(p => p.active && (p.plan === 'pro' || p.plan === 'enterprise')).length;
   const monthly = active * PLAN_PRICE;
-  const annual = monthly * 12;
-
   $('finActive').textContent = active;
   $('finRevenue').textContent = monthly.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  $('finAnnual').textContent = annual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  $('finAnnual').textContent = (monthly * 12).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-  // Gráfico receita por mês (baseado em quando os profissionais foram criados)
   const byMonth = {};
   data.filter(p => p.plan === 'pro' || p.plan === 'enterprise').forEach(p => {
     const m = new Date(p.created_at).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
     byMonth[m] = (byMonth[m] || 0) + PLAN_PRICE;
   });
 
-  const labels = Object.keys(byMonth);
-  const values = Object.values(byMonth);
-
   if (chartRevenue) chartRevenue.destroy();
   chartRevenue = new Chart($('chartRevenue'), {
     type: 'line',
-    data: {
-      labels: labels.length ? labels : ['Sem dados'],
-      datasets: [{
-        label: 'Receita (R$)',
-        data: values.length ? values : [0],
-        borderColor: '#0288d1',
-        backgroundColor: 'rgba(2,136,209,0.12)',
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: '#29b6f6',
-        pointBorderColor: '#0288d1',
-        pointRadius: 3,
-        pointHoverRadius: 5,
-        borderWidth: 2,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } },
-        y: { ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 }, callback: v => `R$ ${v.toFixed(0)}` }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } }
-      }
-    }
+    data: { labels: Object.keys(byMonth).length ? Object.keys(byMonth) : ['Sem dados'], datasets: [{ label: 'Receita (R$)', data: Object.values(byMonth).length ? Object.values(byMonth) : [0], borderColor: '#0288d1', backgroundColor: 'rgba(2,136,209,0.12)', fill: true, tension: 0.4, pointBackgroundColor: '#29b6f6', pointBorderColor: '#0288d1', pointRadius: 3, pointHoverRadius: 5, borderWidth: 2 }] },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } }, y: { ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 }, callback: v => `R$ ${v.toFixed(0)}` }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } } } }
   });
 }
 
@@ -552,20 +443,14 @@ async function loadSuperadmins() {
   el.innerHTML = '<p class="sa-loading">Carregando...</p>';
   const { ok, data } = await api('/superadmins');
   if (!ok) { el.innerHTML = `<p class="sa-error">${data.error}</p>`; return; }
-
   el.innerHTML = `<table class="sa-table">
     <thead><tr><th>Nome</th><th>E-mail</th><th>Status</th><th>Criado em</th><th style="text-align:center">Ações</th></tr></thead>
-    <tbody>${data.map(s => `
-      <tr>
-        <td>${s.name}</td>
-        <td>${s.email}</td>
-        <td><span class="sa-badge ${s.active ? 'sa-badge--active' : 'sa-badge--inactive'}">${s.active ? 'Ativo' : 'Inativo'}</span></td>
-        <td>${new Date(s.created_at).toLocaleDateString('pt-BR')}</td>
-        <td style="text-align:center">
-          <button class="sa-btn-sm sa-btn-warning" onclick="resetSaPass('${s.id}','${s.name}')">Resetar senha</button>
-        </td>
-      </tr>`).join('')}
-    </tbody></table>`;
+    <tbody>${data.map(s => `<tr>
+      <td>${s.name}</td><td>${s.email}</td>
+      <td><span class="sa-badge ${s.active ? 'sa-badge--active' : 'sa-badge--inactive'}">${s.active ? 'Ativo' : 'Inativo'}</span></td>
+      <td>${new Date(s.created_at).toLocaleDateString('pt-BR')}</td>
+      <td style="text-align:center"><button class="sa-btn-sm sa-btn-warning" onclick="resetSaPass('${s.id}','${s.name}')">Resetar senha</button></td>
+    </tr>`).join('')}</tbody></table>`;
 }
 
 window.resetSaPass = async (id, name) => {
@@ -579,12 +464,9 @@ $('saNewSaBtn').addEventListener('click', () => $('saNewSaModal').style.display 
 $('saCloseSaModal').addEventListener('click', () => $('saNewSaModal').style.display = 'none');
 
 $('saCreateSaBtn').addEventListener('click', async () => {
-  const btn = $('saCreateSaBtn');
-  const err = $('saNewError');
-  const name = $('saNewName').value.trim();
-  const email = $('saNewEmail').value.trim();
+  const btn = $('saCreateSaBtn'), err = $('saNewError');
+  const name = $('saNewName').value.trim(), email = $('saNewEmail').value.trim();
   if (!name || !email) { err.textContent = 'Nome e e-mail obrigatórios.'; return; }
-
   btn.disabled = true; btn.textContent = 'Criando...'; err.textContent = '';
   const { ok, data } = await api('/superadmins', { method: 'POST', body: JSON.stringify({ name, email }) });
   btn.disabled = false; btn.textContent = 'Criar superadmin';
