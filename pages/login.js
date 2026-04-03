@@ -1,8 +1,6 @@
 import { authService } from '../services/auth.service.js';
-import { supabase } from '../services/supabase.js';
 
 const API_URL = 'https://psiclo-back.vercel.app/api';
-
 const form = document.getElementById('login-form');
 const errorEl = document.getElementById('login-error');
 const btn = document.getElementById('login-btn');
@@ -33,16 +31,14 @@ authService.getSession().then((session) => {
   if (session) window.location.href = './dashboard.html';
 });
 
-// Toggle senha com SVG
+// Toggle senha
 document.querySelectorAll('.input-password__toggle').forEach((toggleBtn) => {
   toggleBtn.addEventListener('click', () => {
     const input = document.getElementById(toggleBtn.dataset.target);
     const isPass = input.type === 'password';
     input.type = isPass ? 'text' : 'password';
-    const eyeOpen = toggleBtn.querySelector('.eye-open');
-    const eyeClosed = toggleBtn.querySelector('.eye-closed');
-    if (eyeOpen) eyeOpen.style.display = isPass ? 'none' : 'block';
-    if (eyeClosed) eyeClosed.style.display = isPass ? 'block' : 'none';
+    toggleBtn.querySelector('.eye-open').style.display = isPass ? 'none' : 'block';
+    toggleBtn.querySelector('.eye-closed').style.display = isPass ? 'block' : 'none';
   });
 });
 
@@ -53,25 +49,15 @@ form.addEventListener('submit', async (e) => {
   btn.textContent = 'Entrando...';
 
   try {
-    const data = await authService.login(
-      form.email.value.trim(),
-      form.password.value
-    );
+    const data = await authService.login(form.email.value.trim(), form.password.value);
 
-    // Verifica se é primeiro acesso
-    const { data: prof } = await supabase
-      .from('professionals')
-      .select('first_access')
-      .eq('user_id', data.user.id)
-      .single();
-
-    if (prof?.first_access) {
-      showFirstAccessModal(data.user.email);
+    if (data.first_access) {
+      showFirstAccessModal(data.professional.email);
     } else {
       window.location.href = './dashboard.html';
     }
   } catch (err) {
-    errorEl.textContent = 'E-mail ou senha incorretos.';
+    errorEl.textContent = err.message || 'E-mail ou senha incorretos.';
     errorEl.hidden = false;
   } finally {
     btn.disabled = false;
@@ -79,7 +65,6 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-// ── Modal primeiro acesso ─────────────────────────────────────
 function showFirstAccessModal(userEmail) {
   const overlay = document.createElement('div');
   overlay.className = 'first-access-overlay';
@@ -89,14 +74,14 @@ function showFirstAccessModal(userEmail) {
       <p>Por segurança, crie uma nova senha para sua conta.</p>
       <div class="fa-field">
         <label>Nova senha *</label>
-        <input type="password" id="faNewPass" placeholder="Mínimo 8 caracteres" />
+        <input type="password" id="faNewPass" placeholder="Mínimo 6 caracteres" />
       </div>
       <div class="fa-field">
         <label>Confirmar senha *</label>
         <input type="password" id="faConfirmPass" placeholder="Repita a senha" />
       </div>
       <p class="fa-error" id="faError"></p>
-      <button class="btn-primary btn-full" id="faSaveBtn">Salvar e entrar</button>
+      <button class="btn btn--primary btn--full" id="faSaveBtn">Salvar e entrar</button>
     </div>`;
   document.body.appendChild(overlay);
 
@@ -104,13 +89,12 @@ function showFirstAccessModal(userEmail) {
     const newPass = document.getElementById('faNewPass').value;
     const confirm = document.getElementById('faConfirmPass').value;
     const errEl = document.getElementById('faError');
+    const saveBtn = document.getElementById('faSaveBtn');
 
-    if (newPass.length < 8) { errEl.textContent = 'Mínimo 8 caracteres.'; return; }
+    if (newPass.length < 6) { errEl.textContent = 'Mínimo 6 caracteres.'; return; }
     if (newPass !== confirm) { errEl.textContent = 'As senhas não coincidem.'; return; }
 
-    const saveBtn = document.getElementById('faSaveBtn');
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Salvando...';
+    saveBtn.disabled = true; saveBtn.textContent = 'Salvando...';
 
     try {
       const res = await fetch(`${API_URL}/admin/professionals/change-password`, {
@@ -121,10 +105,9 @@ function showFirstAccessModal(userEmail) {
       const data = await res.json();
       if (!res.ok) { errEl.textContent = data.error || 'Erro ao salvar senha.'; saveBtn.disabled = false; saveBtn.textContent = 'Salvar e entrar'; return; }
       window.location.href = './dashboard.html';
-    } catch (e) {
-      errEl.textContent = 'Erro de conexão. Tente novamente.';
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'Salvar e entrar';
+    } catch (_) {
+      errEl.textContent = 'Erro de conexão.';
+      saveBtn.disabled = false; saveBtn.textContent = 'Salvar e entrar';
     }
   });
 }

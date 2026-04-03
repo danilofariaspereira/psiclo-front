@@ -1,20 +1,14 @@
 import { authService } from '../services/auth.service.js';
 import { renderSidebar } from '../components/Sidebar.js';
 import { renderHeader } from '../components/Header.js';
-import { supabase } from '../services/supabase.js';
 import { Modal } from '../components/Modal.js';
 import { notify } from '../utils/notify.js';
 import { dateUtils } from '../utils/date.js';
 
-const API = 'http://localhost:3001/api';
-
-async function getToken() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token;
-}
+const API = 'https://psiclo-back.vercel.app/api';
 
 async function apiFetch(path, options = {}) {
-  const token = await getToken();
+  const token = authService.getToken();
   const res = await fetch(`${API}${path}`, {
     ...options,
     headers: {

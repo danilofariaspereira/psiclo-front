@@ -1,6 +1,7 @@
 import { authService } from '../services/auth.service.js';
 import { store } from '../state/store.js';
-import { supabase } from '../services/supabase.js';
+
+const API_URL = 'https://psiclo-back.vercel.app/api';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard',   icon: '◈', href: 'dashboard.html' },
@@ -100,11 +101,11 @@ function showChangePasswordModal() {
 
     btn.disabled = true; btn.textContent = 'Salvando...';
 
-    const { data: { session } } = await supabase.auth.getSession();
-    const res = await fetch('https://psiclo-back.vercel.app/api/admin/professionals/change-password', {
+    const prof = authService.getProfessional();
+    const res = await fetch(`${API_URL}/admin/professionals/change-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: session.user.email, new_password: newPass }),
+      body: JSON.stringify({ email: prof.email, new_password: newPass }),
     });
     const json = await res.json();
     btn.disabled = false; btn.textContent = 'Salvar';

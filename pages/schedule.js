@@ -4,19 +4,13 @@ import { renderHeader } from '../components/Header.js';
 import { Calendar } from '../components/Calendar.js';
 import { Modal } from '../components/Modal.js';
 import { notify } from '../utils/notify.js';
-import { supabase } from '../services/supabase.js';
 import { dateUtils } from '../utils/date.js';
 
-const API = 'http://localhost:3001/api';
+const API = 'https://psiclo-back.vercel.app/api';
 let scheduleConfig = null;
 
-async function getToken() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token;
-}
-
 async function apiFetch(path, options = {}) {
-  const token = await getToken();
+  const token = authService.getToken();
   const res = await fetch(`${API}${path}`, {
     ...options,
     headers: {
@@ -114,7 +108,7 @@ function renderAppts(appts) {
 
 async function openNewApptModal() {
   // Busca clientes para o select
-  const { data: clients } = await supabase.from('clients').select('id, name').eq('active', true);
+  const clients = await apiFetch('/clients/active');
 
   const content = `
     <div class="form-group">

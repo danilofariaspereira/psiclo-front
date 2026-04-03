@@ -1,30 +1,70 @@
-import { supabase } from './supabase.js';
-import { store } from '../state/store.js';
+const API = 'https://psiclo-back.vercel.app/api';
+
+function getToken() {
+  return localStorage.getItem('psiclo_token');
+}
+
+function setToken(token) {
+  localStorage.setItem('psiclo_token', token);
+}
+
+function clearToken() {
+  localStorage.removeItem('psiclo_token');
+  localStorage.removeItem('psiclo_professional');
+}
 
 export const authService = {
   async login(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    store.set('user', data.user);
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao fazer login.');
+    setToken(data.token);
+    localStorage.setItem('psiclo_professional', JSON.stringify(data.professional));
     return data;
   },
 
   async logout() {
-    await supabase.auth.signOut();
-    store.set('user', null);
-    store.set('professional', null);
+    const token = getToken();
+    if (token) {
+      try {
+        await fetch(`${API}/auth/logout`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (_) {}
+    }
+    clearToken();
     window.location.href = '/pages/login.html';
   },
 
   async getSession() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) store.set('user', session.user);
-    return session;
+    const token = getToken();
+    if (!token) return null;
+    try {
+      const res = await fetch(`${API}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) { clearToken(); return null; }
+      const prof = await res.json();
+      localStorage.setItem('psiclo_professional', JSON.stringify(prof));
+      return { token, professional: prof };
+    } catch (_) {
+      clearToken();
+      return null;
+    }
   },
 
-  onAuthChange(callback) {
-    return supabase.auth.onAuthStateChange((_event, session) => {
-      callback(session);
-    });
+  getProfessional() {
+    try {
+      return JSON.parse(localStorage.getItem('psiclo_professional'));
+    } catch (_) {
+      return null;
+    }
   },
+
+  getToken,
 };
