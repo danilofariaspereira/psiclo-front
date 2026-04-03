@@ -257,6 +257,15 @@ async function loadOverview() {
 }
 
 // ── Profissionais ─────────────────────────────────────────────
+let currentProfTab = 'active';
+
+window.switchProfTab = (tab) => {
+  currentProfTab = tab;
+  document.getElementById('tabActive').classList.toggle('active', tab === 'active');
+  document.getElementById('tabDeleted').classList.toggle('active', tab === 'deleted');
+  tab === 'active' ? loadProfessionals() : loadDeletedProfessionals();
+};
+
 async function loadProfessionals() {
   const el = $('saProfList');
   el.innerHTML = '<p class="sa-loading">Carregando...</p>';
@@ -265,18 +274,43 @@ async function loadProfessionals() {
   if (!data.length) { el.innerHTML = '<p class="sa-empty">Nenhum profissional cadastrado.</p>'; return; }
 
   el.innerHTML = `<table class="sa-table">
-    <thead><tr><th>Nome</th><th>E-mail</th><th>CRP</th><th>Plano</th><th>Status</th><th style="text-align:center">Ações</th></tr></thead>
+    <thead><tr><th>Nome</th><th>E-mail</th><th>CRP</th><th>CPF</th><th>Plano</th><th>Status</th><th style="text-align:center">Ações</th></tr></thead>
     <tbody>${data.map(p => `
       <tr>
         <td>${p.name}</td>
         <td>${p.email}</td>
         <td>${p.crp || '—'}</td>
+        <td>${p.cpf || '—'}</td>
         <td><span class="sa-badge sa-badge--${p.plan}">${p.plan}</span></td>
         <td><span class="sa-badge ${p.active ? 'sa-badge--active' : 'sa-badge--inactive'}">${p.active ? 'Ativo' : 'Inativo'}</span></td>
         <td style="text-align:center">
           <button class="sa-btn-sm" onclick="toggleProf('${p.id}',${p.active})">${p.active ? 'Desativar' : 'Ativar'}</button>
           <button class="sa-btn-sm sa-btn-warning" onclick="resetProfPass('${p.id}','${p.name}')">Resetar senha</button>
-          <button class="sa-btn-sm sa-btn-danger" onclick="deleteProf('${p.id}','${p.name}')">Deletar</button>
+          <button class="sa-btn-sm sa-btn-danger" onclick="deleteProf('${p.id}','${p.name}')">Excluir</button>
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function loadDeletedProfessionals() {
+  const el = $('saProfList');
+  el.innerHTML = '<p class="sa-loading">Carregando...</p>';
+  const { ok, data } = await api('/professionals/deleted');
+  if (!ok) { el.innerHTML = `<p class="sa-error">${data.error}</p>`; return; }
+  if (!data.length) { el.innerHTML = '<p class="sa-empty">Nenhum profissional excluído.</p>'; return; }
+
+  el.innerHTML = `<table class="sa-table">
+    <thead><tr><th>Nome</th><th>E-mail</th><th>CRP</th><th>CPF</th><th>Plano</th><th>Excluído em</th><th style="text-align:center">Ações</th></tr></thead>
+    <tbody>${data.map(p => `
+      <tr>
+        <td>${p.name}</td>
+        <td>${p.email}</td>
+        <td>${p.crp || '—'}</td>
+        <td>${p.cpf || '—'}</td>
+        <td><span class="sa-badge sa-badge--${p.plan}">${p.plan}</span></td>
+        <td>${new Date(p.deleted_at).toLocaleDateString('pt-BR')}</td>
+        <td style="text-align:center">
+          <button class="sa-btn-sm sa-btn-success" onclick="restoreProf('${p.id}','${p.name}')">Restaurar</button>
         </td>
       </tr>`).join('')}
     </tbody></table>`;
@@ -295,10 +329,19 @@ window.resetProfPass = async (id, name) => {
 };
 
 window.deleteProf = async (id, name) => {
-  if (!confirm(`Deletar completamente "${name}"?\n\nTodos os dados serão apagados.`)) return;
+  if (!confirm(`Excluir "${name}"?\n\nOs dados serão mantidos e podem ser restaurados depois.`)) return;
   const { ok, data } = await api(`/professionals/${id}`, { method: 'DELETE' });
   if (!ok) { alert(data.error); return; }
   loadProfessionals();
+  loadOverview();
+};
+
+window.restoreProf = async (id, name) => {
+  if (!confirm(`Restaurar "${name}"?\n\nA senha será resetada para 123456.`)) return;
+  const { ok, data } = await api(`/professionals/${id}/restore`, { method: 'POST' });
+  if (!ok) { alert(data.error); return; }
+  alert(`"${name}" restaurado. Senha: 123456.`);
+  loadDeletedProfessionals();
   loadOverview();
 };
 
@@ -315,12 +358,12 @@ $('saCreateProfBtn').addEventListener('click', async () => {
   btn.disabled = true; btn.textContent = 'Criando...'; err.textContent = '';
   const { ok, data } = await api('/professionals', {
     method: 'POST',
-    body: JSON.stringify({ name, email, crp: $('profCrp').value.trim(), phone: $('profPhone').value.trim(), plan: $('profPlan').value }),
+    body: JSON.stringify({ name, email, crp: $('profCrp').value.trim(), cpf: $('profCpf').value.trim(), phone: $('profPhone').value.trim(), plan: $('profPlan').value }),
   });
   btn.disabled = false; btn.textContent = 'Criar profissional';
   if (!ok) { err.textContent = data.error; return; }
   $('saNewProfModal').style.display = 'none';
-  ['profName','profEmail','profCrp','profPhone'].forEach(id => $(id).value = '');
+  ['profName','profEmail','profCrp','profCpf','profPhone'].forEach(id => $(id).value = '');
   loadProfessionals();
   loadOverview();
 });

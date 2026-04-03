@@ -183,7 +183,11 @@
             <div class="sa-topbar__title">Profissionais</div>
             <div class="sa-topbar__sub">Gerencie os profissionais da plataforma</div>
           </div>
-          <button class="sa-btn-primary" id="saNewProfBtn">+ Novo profissional</button>
+          <div style="display:flex;gap:.5rem;align-items:center;">
+            <button class="sa-tab-btn active" id="tabActive" onclick="switchProfTab('active')">Ativos</button>
+            <button class="sa-tab-btn" id="tabDeleted" onclick="switchProfTab('deleted')">Excluídos</button>
+            <button class="sa-btn-primary" id="saNewProfBtn">+ Novo profissional</button>
+          </div>
         </div>
         <div class="sa-page">
           <div id="saProfList" class="sa-table-wrap"></div>
@@ -219,11 +223,14 @@
       </div>
       <div class="sa-field-row">
         <div class="sa-field"><label>CRP</label><input type="text" id="profCrp" placeholder="05/00000" /></div>
-        <div class="sa-field"><label>Telefone</label><input type="tel" id="profPhone" placeholder="(21) 99999-9999" /></div>
+        <div class="sa-field"><label>CPF</label><input type="text" id="profCpf" placeholder="000.000.000-00" /></div>
       </div>
-      <div class="sa-field">
-        <label>Plano</label>
-        <select id="profPlan"><option value="free">Free</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select>
+      <div class="sa-field-row">
+        <div class="sa-field"><label>Telefone</label><input type="tel" id="profPhone" placeholder="(21) 99999-9999" /></div>
+        <div class="sa-field">
+          <label>Plano</label>
+          <select id="profPlan"><option value="free">Free</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select>
+        </div>
       </div>
       <p class="sa-error" id="profError"></p>
       <button class="sa-btn-primary sa-btn-full" id="saCreateProfBtn">Criar profissional</button>

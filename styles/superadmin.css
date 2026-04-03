@@ -179,12 +179,19 @@
 .sa-btn-primary:hover { opacity: .88; }
 .sa-btn-primary:disabled { opacity: .5; cursor: not-allowed; }
 .sa-btn-full { width: 100%; justify-content: center; padding: .75rem; font-size: .95rem; border-radius: 6px; margin-top: .5rem; }
-.sa-btn-sm { background: var(--btn-sm-bg); border: 1px solid var(--btn-sm-border); padding: .28rem .6rem; border-radius: 6px; font-size: .75rem; cursor: pointer; color: var(--btn-sm-text); margin-right: .25rem; transition: background .15s; }
-.sa-btn-sm:hover { background: var(--btn-sm-hover); }
-.sa-btn-danger { border-color: #ef444433; color: #ef4444; }
-.sa-btn-danger:hover { background: #ef444411; }
-.sa-btn-warning { border-color: #f59e0b33; color: #f59e0b; }
-.sa-btn-warning:hover { background: #f59e0b11; }
+.sa-btn-sm { background: transparent; border: 1.5px solid currentColor; padding: .28rem .65rem; border-radius: 5px; font-size: .75rem; cursor: pointer; margin-right: .25rem; transition: opacity .15s; font-weight: 600; color: #1e293b; }
+.sa-btn-sm:hover { opacity: .75; }
+.sa-btn-danger { border-color: #ef4444; color: #1a1a1a; background: #fca5a5; }
+.sa-btn-danger:hover { background: #f87171; }
+.sa-btn-warning { border-color: #d97706; color: #1a1a1a; background: #fbbf24; }
+.sa-btn-warning:hover { background: #f59e0b; }
+.sa-btn-success { border-color: #16a34a; color: #1a1a1a; background: #4ade80; }
+.sa-btn-success:hover { background: #22c55e; }
+
+/* ── Tabs ── */
+.sa-tab-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); padding: .35rem .9rem; border-radius: 5px; font-size: .82rem; font-weight: 600; cursor: pointer; transition: all .15s; }
+.sa-tab-btn.active { background: rgba(255,255,255,0.25); color: #fff; border-color: rgba(255,255,255,0.4); }
+.sa-tab-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
 
 /* ── Overlay / Modal ── */
 .sa-overlay { position: fixed; inset: 0; background: var(--overlay); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 1000; }
