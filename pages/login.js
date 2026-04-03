@@ -7,16 +7,42 @@ const form = document.getElementById('login-form');
 const errorEl = document.getElementById('login-error');
 const btn = document.getElementById('login-btn');
 
+// ── Tema ─────────────────────────────────────────────────────
+const savedTheme = localStorage.getItem('sa-theme') || 'light';
+if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+updateLoginThemeBtn(savedTheme);
+
+document.getElementById('loginThemeToggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('sa-theme', next);
+  updateLoginThemeBtn(next);
+});
+
+function updateLoginThemeBtn(theme) {
+  const sun = document.getElementById('loginIconSun');
+  const moon = document.getElementById('loginIconMoon');
+  if (!sun || !moon) return;
+  sun.style.display = theme === 'dark' ? 'block' : 'none';
+  moon.style.display = theme === 'dark' ? 'none' : 'block';
+}
+
 // Redireciona se já estiver logado
 authService.getSession().then((session) => {
   if (session) window.location.href = './dashboard.html';
 });
 
-// Toggle senha
-document.querySelectorAll('.input-password__toggle').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const input = document.getElementById(btn.dataset.target);
-    input.type = input.type === 'password' ? 'text' : 'password';
+// Toggle senha com SVG
+document.querySelectorAll('.input-password__toggle').forEach((toggleBtn) => {
+  toggleBtn.addEventListener('click', () => {
+    const input = document.getElementById(toggleBtn.dataset.target);
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    const eyeOpen = toggleBtn.querySelector('.eye-open');
+    const eyeClosed = toggleBtn.querySelector('.eye-closed');
+    if (eyeOpen) eyeOpen.style.display = isPass ? 'none' : 'block';
+    if (eyeClosed) eyeClosed.style.display = isPass ? 'block' : 'none';
   });
 });
 

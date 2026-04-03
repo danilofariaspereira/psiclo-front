@@ -83,3 +83,67 @@
 .fa-field input:focus { outline: none; border-color: #2e7d32; }
 .fa-error { color: #c62828; font-size: .83rem; min-height: 1.2rem; margin-bottom: .5rem; }
 .btn-full { width: 100%; }
+
+/* ── Dark mode ── */
+[data-theme="dark"] .login-page {
+  background: #0f1117;
+}
+[data-theme="dark"] .login-card {
+  background: #1a1d27;
+  box-shadow: 0 16px 48px rgba(0,0,0,.5);
+}
+[data-theme="dark"] .login-card__title { color: #e2e8f0; }
+[data-theme="dark"] .login-card__sub { color: #64748b; }
+[data-theme="dark"] .form-label { color: #94a3b8; }
+[data-theme="dark"] .form-input {
+  background: #252836;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+[data-theme="dark"] .form-input::placeholder { color: #475569; }
+[data-theme="dark"] .form-input:focus { border-color: #0288d1; }
+[data-theme="dark"] .login-error { background: #3b1a1a; color: #ef4444; }
+
+/* ── Toggle tema login ── */
+.login-theme-toggle {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  backdrop-filter: blur(8px);
+  transition: background .2s;
+  z-index: 10;
+}
+.login-theme-toggle:hover { background: rgba(255,255,255,0.3); }
+[data-theme="dark"] .login-theme-toggle {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.12);
+  color: #e2e8f0;
+}
+
+/* ── Olhinho SVG ── */
+.input-password__toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+.input-password__toggle:hover { color: #64748b; }
+[data-theme="dark"] .input-password__toggle { color: #475569; }
+[data-theme="dark"] .input-password__toggle:hover { color: #94a3b8; }
