@@ -90,7 +90,7 @@
 /* ── Buttons ── */
 .sa-btn-primary {
   display: block; width: 100%; padding: 12px;
-  background: linear-gradient(90deg, #1a237e, #0288d1);
+  background: linear-gradient(90deg, #3a9e5f, #4ab8a0);
   color: #fff; border: none; border-radius: 50px;
   font-size: 1rem; font-weight: 600; cursor: pointer;
   transition: filter .2s, transform .2s;

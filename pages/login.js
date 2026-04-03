@@ -1,6 +1,8 @@
 import { authService } from '../services/auth.service.js';
 import { supabase } from '../services/supabase.js';
 
+const API_URL = 'https://psiclo-back.vercel.app/api';
+
 const form = document.getElementById('login-form');
 const errorEl = document.getElementById('login-error');
 const btn = document.getElementById('login-btn');
@@ -38,7 +40,7 @@ form.addEventListener('submit', async (e) => {
       .single();
 
     if (prof?.first_access) {
-      showFirstAccessModal(data.user.id);
+      showFirstAccessModal(data.user.email);
     } else {
       window.location.href = './dashboard.html';
     }
@@ -52,7 +54,7 @@ form.addEventListener('submit', async (e) => {
 });
 
 // ── Modal primeiro acesso ─────────────────────────────────────
-function showFirstAccessModal(userId) {
+function showFirstAccessModal(userEmail) {
   const overlay = document.createElement('div');
   overlay.className = 'first-access-overlay';
   overlay.innerHTML = `
@@ -84,12 +86,19 @@ function showFirstAccessModal(userId) {
     saveBtn.disabled = true;
     saveBtn.textContent = 'Salvando...';
 
-    const { error } = await supabase.auth.updateUser({ password: newPass });
-    if (error) { errEl.textContent = error.message; saveBtn.disabled = false; saveBtn.textContent = 'Salvar e entrar'; return; }
-
-    // Remove flag first_access
-    await supabase.from('professionals').update({ first_access: false }).eq('user_id', userId);
-
-    window.location.href = './dashboard.html';
+    try {
+      const res = await fetch(`${API_URL}/admin/professionals/change-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail, new_password: newPass }),
+      });
+      const data = await res.json();
+      if (!res.ok) { errEl.textContent = data.error || 'Erro ao salvar senha.'; saveBtn.disabled = false; saveBtn.textContent = 'Salvar e entrar'; return; }
+      window.location.href = './dashboard.html';
+    } catch (e) {
+      errEl.textContent = 'Erro de conexão. Tente novamente.';
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Salvar e entrar';
+    }
   });
 }
