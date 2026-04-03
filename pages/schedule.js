@@ -48,6 +48,58 @@ async function init() {
   cal.render();
 
   document.getElementById('btn-new-appt').addEventListener('click', openNewApptModal);
+  document.getElementById('btn-config').addEventListener('click', openConfigModal);
+}
+
+async function openConfigModal() {
+  let config = { work_days: [1,2,3,4,5], start_time: '08:00', end_time: '18:00', session_duration: 50, break_between: 10 };
+  try { config = await apiFetch('/schedule/config') || config; } catch {}
+
+  const days = [
+    { label: 'Dom', value: 0 }, { label: 'Seg', value: 1 }, { label: 'Ter', value: 2 },
+    { label: 'Qua', value: 3 }, { label: 'Qui', value: 4 }, { label: 'Sex', value: 5 }, { label: 'Sáb', value: 6 },
+  ];
+
+  Modal.open({
+    title: 'Configurar horários de atendimento',
+    confirmLabel: 'Salvar',
+    content: `
+      <div class="form-group">
+        <label class="form-label">Dias de atendimento</label>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.25rem;">
+          ${days.map(d => `
+            <label style="display:flex;align-items:center;gap:.3rem;cursor:pointer;font-size:.9rem;">
+              <input type="checkbox" value="${d.value}" ${config.work_days?.includes(d.value) ? 'checked' : ''} class="day-check" />
+              ${d.label}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+        <div class="form-group"><label class="form-label">Início</label><input type="time" id="cfg-start" class="form-input" value="${config.start_time || '08:00'}" /></div>
+        <div class="form-group"><label class="form-label">Fim</label><input type="time" id="cfg-end" class="form-input" value="${config.end_time || '18:00'}" /></div>
+        <div class="form-group"><label class="form-label">Duração da sessão (min)</label><input type="number" id="cfg-duration" class="form-input" value="${config.session_duration || 50}" min="15" max="120" /></div>
+        <div class="form-group"><label class="form-label">Intervalo entre sessões (min)</label><input type="number" id="cfg-break" class="form-input" value="${config.break_between || 10}" min="0" max="60" /></div>
+      </div>
+    `,
+    onConfirm: async () => {
+      const work_days = [...document.querySelectorAll('.day-check:checked')].map(c => parseInt(c.value));
+      if (!work_days.length) { notify('Selecione ao menos um dia.', 'error'); return; }
+      try {
+        scheduleConfig = await apiFetch('/schedule/config', {
+          method: 'PUT',
+          body: JSON.stringify({
+            work_days,
+            start_time: document.getElementById('cfg-start').value,
+            end_time: document.getElementById('cfg-end').value,
+            session_duration: parseInt(document.getElementById('cfg-duration').value),
+            break_between: parseInt(document.getElementById('cfg-break').value),
+          }),
+        });
+        notify('Horários salvos!', 'success');
+      } catch { notify('Erro ao salvar.', 'error'); }
+    },
+  });
 }
 
 async function loadDay(date) {
