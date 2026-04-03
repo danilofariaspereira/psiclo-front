@@ -11,7 +11,7 @@
 </head>
 <body class="sa-body">
 
-  <!-- TELA DE LOGIN -->
+  <!-- LOGIN -->
   <div id="saLoginScreen" class="sa-login">
     <div class="sa-login__card">
       <img src="../img/logo-psiclo.png" alt="PSICLO" class="sa-login__logo" />
@@ -26,7 +26,7 @@
         <input type="password" id="saPassword" placeholder="••••••••" autocomplete="current-password" />
       </div>
       <p class="sa-error" id="saLoginError"></p>
-      <button class="sa-btn-primary" id="saLoginBtn">Entrar</button>
+      <button class="sa-btn-primary sa-btn-full" id="saLoginBtn">Entrar</button>
     </div>
   </div>
 
@@ -49,39 +49,91 @@
   </div>
 
   <!-- PAINEL PRINCIPAL -->
-  <div id="saPanel" style="display:none">
-    <header class="sa-header">
-      <img src="../img/logo-psiclo.png" alt="PSICLO" class="sa-header__logo" />
-      <span class="sa-header__title">Painel Superadmin</span>
-      <span class="sa-header__user" id="saUserName"></span>
-      <button class="sa-header__logout" id="saLogoutBtn">Sair</button>
-    </header>
+  <div id="saPanel" style="display:none" class="sa-layout">
 
-    <main class="sa-main">
-      <!-- Tabs -->
-      <div class="sa-tabs">
-        <button class="sa-tab active" data-tab="professionals">Profissionais</button>
-        <button class="sa-tab" data-tab="superadmins">Superadmins</button>
+    <!-- Sidebar -->
+    <aside class="sa-sidebar">
+      <div class="sa-sidebar__logo">
+        <img src="../img/logo-psiclo.png" alt="PSICLO" />
+      </div>
+      <span class="sa-sidebar__label">Navegação</span>
+      <button class="sa-nav-item active" data-page="overview">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Visão geral
+      </button>
+      <button class="sa-nav-item" data-page="professionals">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Profissionais
+      </button>
+      <button class="sa-nav-item" data-page="superadmins">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Superadmins
+      </button>
+
+      <div class="sa-sidebar__footer">
+        <div class="sa-sidebar__user">
+          <div class="sa-avatar" id="saAvatarSidebar"></div>
+          <div class="sa-sidebar__user-info">
+            <div class="sa-sidebar__user-name" id="saUserName">—</div>
+            <div class="sa-sidebar__user-role">Superadmin</div>
+          </div>
+          <button class="sa-logout-btn" id="saLogoutBtn" title="Sair">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Conteúdo -->
+    <div class="sa-content">
+
+      <!-- Visão geral -->
+      <div id="pageOverview">
+        <div class="sa-topbar">
+          <div>
+            <div class="sa-topbar__title">Visão geral</div>
+            <div class="sa-topbar__sub">Resumo da plataforma</div>
+          </div>
+        </div>
+        <div class="sa-page">
+          <div class="sa-metrics">
+            <div class="sa-metric"><div class="sa-metric__label">Total profissionais</div><div class="sa-metric__value purple" id="metricTotal">—</div></div>
+            <div class="sa-metric"><div class="sa-metric__label">Ativos</div><div class="sa-metric__value green" id="metricActive">—</div></div>
+            <div class="sa-metric"><div class="sa-metric__label">Inativos</div><div class="sa-metric__value red" id="metricInactive">—</div></div>
+            <div class="sa-metric"><div class="sa-metric__label">Plano Pro</div><div class="sa-metric__value" id="metricPro">—</div></div>
+          </div>
+        </div>
       </div>
 
-      <!-- Tab: Profissionais -->
-      <div id="tabProfessionals" class="sa-tab-content">
-        <div class="sa-toolbar">
-          <h2 class="sa-section-title">Profissionais cadastrados</h2>
+      <!-- Profissionais -->
+      <div id="pageProfessionals" style="display:none">
+        <div class="sa-topbar">
+          <div>
+            <div class="sa-topbar__title">Profissionais</div>
+            <div class="sa-topbar__sub">Gerencie os profissionais da plataforma</div>
+          </div>
           <button class="sa-btn-primary" id="saNewProfBtn">+ Novo profissional</button>
         </div>
-        <div id="saProfList" class="sa-table-wrap"></div>
+        <div class="sa-page">
+          <div id="saProfList" class="sa-table-wrap"></div>
+        </div>
       </div>
 
-      <!-- Tab: Superadmins -->
-      <div id="tabSuperadmins" class="sa-tab-content" style="display:none">
-        <div class="sa-toolbar">
-          <h2 class="sa-section-title">Superadmins</h2>
+      <!-- Superadmins -->
+      <div id="pageSuperadmins" style="display:none">
+        <div class="sa-topbar">
+          <div>
+            <div class="sa-topbar__title">Superadmins</div>
+            <div class="sa-topbar__sub">Gerencie os superadmins da plataforma</div>
+          </div>
           <button class="sa-btn-primary" id="saNewSaBtn">+ Novo superadmin</button>
         </div>
-        <div id="saSaList" class="sa-table-wrap"></div>
+        <div class="sa-page">
+          <div id="saSaList" class="sa-table-wrap"></div>
+        </div>
       </div>
-    </main>
+
+    </div>
   </div>
 
   <!-- MODAL: NOVO PROFISSIONAL -->
@@ -91,32 +143,16 @@
       <h3 class="sa-modal__title">Novo profissional</h3>
       <p class="sa-modal__sub">Senha padrão: <strong>123456</strong>. O profissional deverá alterá-la no primeiro acesso.</p>
       <div class="sa-field-row">
-        <div class="sa-field">
-          <label>Nome *</label>
-          <input type="text" id="profName" placeholder="Nome completo" />
-        </div>
-        <div class="sa-field">
-          <label>E-mail *</label>
-          <input type="email" id="profEmail" placeholder="email@exemplo.com" />
-        </div>
+        <div class="sa-field"><label>Nome *</label><input type="text" id="profName" placeholder="Nome completo" /></div>
+        <div class="sa-field"><label>E-mail *</label><input type="email" id="profEmail" placeholder="email@exemplo.com" /></div>
       </div>
       <div class="sa-field-row">
-        <div class="sa-field">
-          <label>CRP</label>
-          <input type="text" id="profCrp" placeholder="05/00000" />
-        </div>
-        <div class="sa-field">
-          <label>Telefone</label>
-          <input type="tel" id="profPhone" placeholder="(21) 99999-9999" />
-        </div>
+        <div class="sa-field"><label>CRP</label><input type="text" id="profCrp" placeholder="05/00000" /></div>
+        <div class="sa-field"><label>Telefone</label><input type="tel" id="profPhone" placeholder="(21) 99999-9999" /></div>
       </div>
       <div class="sa-field">
         <label>Plano</label>
-        <select id="profPlan">
-          <option value="free">Free</option>
-          <option value="pro">Pro</option>
-          <option value="enterprise">Enterprise</option>
-        </select>
+        <select id="profPlan"><option value="free">Free</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select>
       </div>
       <p class="sa-error" id="profError"></p>
       <button class="sa-btn-primary sa-btn-full" id="saCreateProfBtn">Criar profissional</button>
@@ -129,14 +165,8 @@
       <button class="sa-modal__close" id="saCloseSaModal">✕</button>
       <h3 class="sa-modal__title">Novo superadmin</h3>
       <p class="sa-modal__sub">Senha padrão: <strong>123456</strong>.</p>
-      <div class="sa-field">
-        <label>Nome *</label>
-        <input type="text" id="saNewName" placeholder="Nome completo" />
-      </div>
-      <div class="sa-field">
-        <label>E-mail *</label>
-        <input type="email" id="saNewEmail" placeholder="email@exemplo.com" />
-      </div>
+      <div class="sa-field"><label>Nome *</label><input type="text" id="saNewName" placeholder="Nome completo" /></div>
+      <div class="sa-field"><label>E-mail *</label><input type="email" id="saNewEmail" placeholder="email@exemplo.com" /></div>
       <p class="sa-error" id="saNewError"></p>
       <button class="sa-btn-primary sa-btn-full" id="saCreateSaBtn">Criar superadmin</button>
     </div>
