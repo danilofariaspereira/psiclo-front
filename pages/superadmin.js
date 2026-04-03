@@ -163,6 +163,70 @@ function openPanel(name) {
 
 $('saLogoutBtn').addEventListener('click', () => { token = ''; location.reload(); });
 
+// ── Alterar senha (superadmin logado) ─────────────────────────
+$('saChangePassBtn').addEventListener('click', () => {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
+  overlay.innerHTML = `
+    <div class="sa-modal" style="max-width:360px;">
+      <h3 class="sa-modal__title">Alterar senha</h3>
+      <p class="sa-modal__sub">Mínimo 6 caracteres.</p>
+      <div class="sa-field">
+        <label>Nova senha</label>
+        <div class="sa-password-wrap">
+          <input type="password" id="saNewPassChange" placeholder="••••••••" />
+          <button type="button" class="sa-eye-btn" onclick="togglePass('saNewPassChange',this)" tabindex="-1">
+            <svg class="eye-open" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="eye-closed" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="sa-field">
+        <label>Confirmar senha</label>
+        <div class="sa-password-wrap">
+          <input type="password" id="saConfirmPassChange" placeholder="••••••••" />
+          <button type="button" class="sa-eye-btn" onclick="togglePass('saConfirmPassChange',this)" tabindex="-1">
+            <svg class="eye-open" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="eye-closed" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+      </div>
+      <p class="sa-error" id="saChangePassError"></p>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+        <button class="sa-btn-primary" style="flex:1;justify-content:center;background:rgba(255,255,255,0.15);color:#fff;" id="saChangePassCancel">Cancelar</button>
+        <button class="sa-btn-primary" style="flex:1;justify-content:center;" id="saChangePassSave">Salvar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  document.getElementById('saChangePassCancel').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+  document.getElementById('saChangePassSave').addEventListener('click', async () => {
+    const newPass = document.getElementById('saNewPassChange').value;
+    const confirm = document.getElementById('saConfirmPassChange').value;
+    const errEl = document.getElementById('saChangePassError');
+    const btn = document.getElementById('saChangePassSave');
+
+    if (newPass.length < 6) { errEl.textContent = 'Mínimo 6 caracteres.'; return; }
+    if (newPass !== confirm) { errEl.textContent = 'As senhas não coincidem.'; return; }
+
+    btn.disabled = true; btn.textContent = 'Salvando...';
+
+    const res = await fetch(`https://psiclo-back.vercel.app/api/admin/auth/change-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: currentEmail, new_password: newPass }),
+    });
+    const data = await res.json();
+    btn.disabled = false; btn.textContent = 'Salvar';
+
+    if (!res.ok) { errEl.textContent = data.error; return; }
+    overlay.remove();
+    alert('Senha alterada com sucesso!');
+  });
+});
+
 // ── Navegação ─────────────────────────────────────────────────
 const pages = { overview: 'pageOverview', professionals: 'pageProfessionals', superadmins: 'pageSuperadmins', financial: 'pageFinancial' };
 

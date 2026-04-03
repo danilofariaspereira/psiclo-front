@@ -122,6 +122,8 @@
 .sa-sidebar__user-role { font-size: .7rem; color: var(--sidebar-text-sub); }
 .sa-logout-btn { background: none; border: none; color: var(--sidebar-text-sub); cursor: pointer; padding: .25rem; border-radius: 4px; flex-shrink: 0; }
 .sa-logout-btn:hover { color: #ef4444; }
+.sa-change-pass-btn { background: none; border: none; color: var(--sidebar-text-sub); cursor: pointer; padding: .25rem; border-radius: 4px; flex-shrink: 0; }
+.sa-change-pass-btn:hover { color: var(--sidebar-text); }
 
 /* ── Main content ── */
 .sa-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; height: 100vh; }
