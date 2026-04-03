@@ -40,6 +40,15 @@ async function api(path, opts = {}) {
   return { ok: res.ok, data };
 }
 
+// ── Toggle senha visível ──────────────────────────────────────
+window.togglePass = (inputId, btn) => {
+  const input = $(inputId);
+  const isPass = input.type === 'password';
+  input.type = isPass ? 'text' : 'password';
+  btn.querySelector('.eye-open').style.display = isPass ? 'none' : 'block';
+  btn.querySelector('.eye-closed').style.display = isPass ? 'block' : 'none';
+};
+
 // ── Login ─────────────────────────────────────────────────────
 $('saLoginBtn').addEventListener('click', doLogin);
 $('saPassword').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
@@ -113,6 +122,9 @@ function openPanel(name) {
   $('saPanel').style.display = 'flex';
   $('saUserName').textContent = name;
 
+  // Garantir que a página overview começa como flex
+  $('pageOverview').style.display = 'flex';
+
   // Avatar com iniciais + clique para foto
   const initials = name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   $('saAvatarSidebar').textContent = initials;
@@ -159,8 +171,8 @@ document.querySelectorAll('.sa-nav-item').forEach(item => {
     document.querySelectorAll('.sa-nav-item').forEach(i => i.classList.remove('active'));
     item.classList.add('active');
     const page = item.dataset.page;
-    Object.values(pages).forEach(p => $(p).style.display = 'none');
-    $(pages[page]).style.display = 'block';
+    Object.values(pages).forEach(p => { $(p).style.display = 'none'; });
+    $(pages[page]).style.display = 'flex';
     if (page === 'professionals') loadProfessionals();
     if (page === 'superadmins') loadSuperadmins();
     if (page === 'overview') loadOverview();
