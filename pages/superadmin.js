@@ -80,7 +80,7 @@ async function doLogin() {
     $('saFirstAccessModal').style.display = 'flex';
     $('saFirstAccessModal').dataset.email = data.email;
   } else {
-    openPanel(data.name);
+    openPanel(data.name, data.avatar_url);
   }
 }
 
@@ -118,7 +118,7 @@ $('saSavePassBtn').addEventListener('click', async () => {
 });
 
 // ── Painel ────────────────────────────────────────────────────
-function openPanel(name) {
+function openPanel(name, avatarUrl = null) {
   $('saLoginScreen').style.display = 'none';
   $('saFirstAccessModal').style.display = 'none';
   $('saPanel').style.display = 'flex';
@@ -128,20 +128,28 @@ function openPanel(name) {
   const initials = name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   $('saAvatarSidebar').textContent = initials;
 
-  // Avatar salvo localmente é apenas uma foto de perfil — não é dado sensível
-  const savedPhoto = localStorage.getItem('sa-avatar');
-  if (savedPhoto) $('saAvatarSidebar').innerHTML = `<img src="${savedPhoto}" alt="avatar" />`;
+  // Avatar vem do banco — sem localStorage
+  if (avatarUrl) $('saAvatarSidebar').innerHTML = `<img src="${avatarUrl}" alt="avatar" />`;
 
+  // Upload de avatar vai para o Supabase Storage via backend
   $('saAvatarSidebar').addEventListener('click', () => $('saAvatarInput').click());
-  $('saAvatarInput').addEventListener('change', (e) => {
+  $('saAvatarInput').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      localStorage.setItem('sa-avatar', ev.target.result);
-      $('saAvatarSidebar').innerHTML = `<img src="${ev.target.result}" alt="avatar" />`;
-    };
-    reader.readAsDataURL(file);
+    const formData = new FormData();
+    formData.append('avatar', file);
+    try {
+      const res = await fetch('https://psiclo-back.vercel.app/api/admin/auth/avatar', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      $('saAvatarSidebar').innerHTML = `<img src="${json.avatar_url}" alt="avatar" />`;
+    } catch (err) {
+      alert('Erro ao salvar foto: ' + err.message);
+    }
   });
 
   $('saThemeTogglePanel').addEventListener('click', toggleTheme);

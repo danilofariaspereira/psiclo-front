@@ -17,9 +17,8 @@ export function renderSidebar(activePage) {
 
   const prof = store.get('professional');
   const initials = prof?.name ? prof.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : '?';
-  const savedPhoto = localStorage.getItem('psiclo_avatar');
-  const avatarContent = savedPhoto
-    ? `<img src="${savedPhoto}" alt="foto" />`
+  const avatarContent = prof?.avatar_url
+    ? `<img src="${prof.avatar_url}" alt="foto" />`
     : initials;
 
   sidebar.innerHTML = `
@@ -63,19 +62,31 @@ export function renderSidebar(activePage) {
     <input type="file" id="avatar-input" accept="image/*" style="display:none" />
   `;
 
-  // Avatar upload
+  // Avatar upload — envia para o backend, que salva no Supabase Storage
   document.getElementById('sidebar-profile').addEventListener('click', () => {
     document.getElementById('avatar-input').click();
   });
-  document.getElementById('avatar-input').addEventListener('change', (e) => {
+  document.getElementById('avatar-input').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      localStorage.setItem('psiclo_avatar', ev.target.result);
-      document.getElementById('sidebar-avatar').innerHTML = `<img src="${ev.target.result}" alt="foto" />`;
-    };
-    reader.readAsDataURL(file);
+    const formData = new FormData();
+    formData.append('avatar', file);
+    try {
+      const res = await fetch(`${API_URL}/auth/avatar`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      // Atualiza o avatar na sidebar sem recarregar
+      document.getElementById('sidebar-avatar').innerHTML = `<img src="${json.avatar_url}" alt="foto" />`;
+      // Atualiza o store
+      const prof = store.get('professional');
+      if (prof) store.set('professional', { ...prof, avatar_url: json.avatar_url });
+    } catch (err) {
+      alert('Erro ao salvar foto: ' + err.message);
+    }
   });
 
   document.getElementById('logout-btn').addEventListener('click', () => authService.logout());
