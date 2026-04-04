@@ -182,8 +182,8 @@
 .sa-btn-primary:hover { opacity: .88; }
 .sa-btn-primary:disabled { opacity: .5; cursor: not-allowed; }
 .sa-btn-full { width: 100%; justify-content: center; padding: .75rem; font-size: .95rem; border-radius: 6px; margin-top: .5rem; }
-.sa-btn-sm { background: transparent; border: 1.5px solid currentColor; padding: .28rem .65rem; border-radius: 5px; font-size: .75rem; cursor: pointer; margin-right: .25rem; transition: opacity .15s; font-weight: 600; color: #1e293b; }
-.sa-btn-sm:hover { opacity: .75; }
+.sa-btn-sm { background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.35); padding: .28rem .65rem; border-radius: 5px; font-size: .75rem; cursor: pointer; margin-right: .25rem; transition: opacity .15s; font-weight: 600; color: #fff; }
+.sa-btn-sm:hover { background: rgba(255,255,255,0.25); }
 .sa-btn-danger { border-color: #ef4444; color: #1a1a1a; background: #fca5a5; }
 .sa-btn-danger:hover { background: #f87171; }
 .sa-btn-warning { border-color: #d97706; color: #1a1a1a; background: #fbbf24; }
