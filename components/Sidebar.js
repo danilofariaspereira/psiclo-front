@@ -145,7 +145,11 @@ function startGlobalPolling() {
     try {
       const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
         .split('/').reverse().join('-');
-      const res = await fetch(`${API}/schedule/appointments?date=${today}`, { credentials: 'include' });
+      const res = await fetch(`${API}/schedule/appointments?date=${today}`, {
+        credentials: 'include',
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       if (!res.ok) return;
       const appts = await res.json();
       const count = appts?.length ?? 0;
@@ -162,7 +166,9 @@ function startGlobalPolling() {
       }
       lastCount = count;
       initialized = true;
-    } catch (_) {}
+    } catch (e) {
+      console.warn('[psiclo polling]', e.message);
+    }
   }
 
   check();

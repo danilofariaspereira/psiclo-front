@@ -431,15 +431,9 @@ async function loadPaymentMap(month = null) {
 window.switchPayMonth = (month) => loadPaymentMap(month);
 
 // ── Polling ───────────────────────────────────────────────────
+// O polling de agendamentos já roda no Sidebar.js (global, todas as páginas).
+// Aqui só atualizamos os stats quando a página está aberta.
 function startPolling() {
-  // Inicializa contadores com dados atuais
-  apiFetch('/leads?status=new').catch(() => []).then(leads => {
-    lastLeadCount = leads?.length ?? 0;
-  });
-  apiFetch(`/schedule/appointments?date=${todayBR()}`).catch(() => []).then(appts => {
-    lastApptCount = appts?.length ?? 0;
-  });
-
   pollingInterval = setInterval(async () => {
     try {
       const today = todayBR();
@@ -451,34 +445,19 @@ function startPolling() {
       const newLeadCount = leads?.length ?? 0;
       const newApptCount = todayAppts?.length ?? 0;
 
-      // Novo agendamento hoje
+      if (newLeadCount > lastLeadCount) {
+        loadStats();
+      }
       if (newApptCount > lastApptCount) {
-        const newest = todayAppts[todayAppts.length - 1];
-        const clientName = newest?.clients?.name || '';
-        const time = newest?.scheduled_at
-          ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
-          : '';
-        showNotification(
-          `📅 Novo agendamento — ${esc(clientName)}`,
-          time ? `Hoje às ${time}` : 'Novo agendamento recebido'
-        );
         loadUpcoming();
         loadStats();
       }
-
-      // Novo lead (Instagram, WhatsApp, etc.)
-      if (newLeadCount > lastLeadCount) {
-        const newest = leads[0];
-        showNotification('🔔 Novo lead recebido!', esc(newest?.name || ''));
-        loadStats();
-      }
-
-      lastApptCount = newApptCount;
       lastLeadCount = newLeadCount;
+      lastApptCount = newApptCount;
     } catch (err) {
-      console.warn('[polling] erro:', err.message);
+      console.warn('[dashboard polling]', err.message);
     }
-  }, 30000); // 30s
+  }, 30000);
 }
 
 window.addEventListener('beforeunload', () => { if (pollingInterval) clearInterval(pollingInterval); });
