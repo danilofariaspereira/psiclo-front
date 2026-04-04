@@ -122,15 +122,4 @@ async function openNewPaymentModal() {
   });
 }
 
-window.markPaid = async (id) => {
-  try {
-    await apiFetch(`/financial/payments/${id}/pay`, { method: 'PATCH' });
-    notify.success('Pagamento confirmado.');
-    loadSummary();
-    loadPayments();
-  } catch {
-    notify.error('Erro ao confirmar pagamento.');
-  }
-};
-
 init();
