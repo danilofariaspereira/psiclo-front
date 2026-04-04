@@ -126,13 +126,13 @@
   gap: 6px;
   padding: 10px var(--space-sm);
   color: #fff;
-  background: linear-gradient(135deg, #1a237e 0%, #1565c0 60%, #0288d1 100%);
+  background: linear-gradient(180deg, #1565c0 0%, #0288d1 100%);
   font-size: .78rem;
   font-weight: 600;
   border: none;
   cursor: pointer;
   transition: opacity var(--transition);
-  border-top: 1px solid rgba(255,255,255,0.15);
+  border-top: 2px solid rgba(255,255,255,0.2);
 }
 .sidebar__footer-btn:first-child { border-right: 1px solid rgba(255,255,255,0.15); }
 .sidebar__footer-btn:hover { opacity: .85; }

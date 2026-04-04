@@ -390,22 +390,22 @@ async function loadPaymentMap(month = null) {
           const v = byMethod[m.key];
           const pct = total > 0 ? ((v.total / total) * 100).toFixed(1) : 0;
           return `
-          <div class="card" style="border-top:3px solid ${m.color}">
+          <div style="background:linear-gradient(135deg,#1a237e 0%,#1565c0 60%,#0288d1 100%);border-radius:var(--radius-md);padding:var(--space-md);box-shadow:var(--shadow-md)">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
               <span style="color:${m.color}">${m.icon}</span>
               <span style="font-size:.78rem;color:${m.color};font-weight:700">${pct}%</span>
             </div>
-            <p style="font-size:1.1rem;font-weight:700;color:var(--color-text)">${currencyUtils.format(v.total)}</p>
-            <p style="font-size:.75rem;color:var(--color-text-muted);margin-bottom:.4rem">${m.label} · ${v.count} atend.</p>
-            <div style="height:4px;background:#e2e8f0;border-radius:2px">
+            <p style="font-size:1.1rem;font-weight:700;color:#fff">${currencyUtils.format(v.total)}</p>
+            <p style="font-size:.75rem;color:rgba(255,255,255,.65);margin-bottom:.4rem">${m.label} · ${v.count} atend.</p>
+            <div style="height:4px;background:rgba(255,255,255,.2);border-radius:2px">
               <div style="height:4px;background:${m.color};border-radius:2px;width:${pct}%"></div>
             </div>
           </div>`;
         }).join('')}
       </div>
       <div style="text-align:right">
-        <div class="stat-card" style="display:inline-block;padding:.5rem 1rem">
-          <span style="font-size:.7rem;color:rgba(255,255,255,.75);font-weight:700;text-transform:uppercase">Total do período</span>
+        <div style="display:inline-block;background:linear-gradient(135deg,#1a237e 0%,#1565c0 60%,#0288d1 100%);border-radius:var(--radius-md);padding:.5rem 1rem;box-shadow:var(--shadow-md)">
+          <span style="font-size:.7rem;color:rgba(255,255,255,.75);font-weight:700;text-transform:uppercase;display:block">Total do período</span>
           <p style="font-size:1.1rem;font-weight:700;color:#fff">${currencyUtils.format(total)}</p>
         </div>
       </div>`;
