@@ -108,7 +108,7 @@ function showFirstAccessModal(userEmail) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email: userEmail, new_password: newPass }),
+        body: JSON.stringify({ new_password: newPass }),
       });
       const data = await res.json();
       if (!res.ok) { errEl.textContent = data.error || 'Erro ao salvar senha.'; saveBtn.disabled = false; saveBtn.textContent = 'Salvar e entrar'; return; }

@@ -152,11 +152,11 @@ function startGlobalPolling() {
 
       if (initialized && count > lastCount && getNotifPref()) {
         const newest = appts[appts.length - 1];
-        const clientName = newest?.clients?.name || '';
+        const clientName = escHtml(newest?.clients?.name || '');
         const time = newest?.scheduled_at
           ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
           : '';
-        showGlobalToast(`📅 Novo agendamento — ${clientName}`, time ? `Hoje às ${time}` : '');
+        showGlobalToast(`📅 Novo agendamento — ${clientName}`, time ? `Hoje às ${escHtml(time)}` : '');
       }
       lastCount = count;
       initialized = true;
@@ -165,6 +165,11 @@ function startGlobalPolling() {
 
   check();
   _globalPollingTimer = setInterval(check, 30000);
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
 }
 
 function showGlobalToast(title, subtitle = '') {
