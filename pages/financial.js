@@ -5,6 +5,7 @@ import { Modal } from '../components/Modal.js';
 import { notify } from '../utils/notify.js';
 import { currencyUtils } from '../utils/currency.js';
 import { dateUtils } from '../utils/date.js';
+import { esc } from '../utils/sanitize.js';
 
 const API = 'https://psiclo-back.vercel.app/api';
 
@@ -59,13 +60,13 @@ async function loadPayments() {
 
     tbody.innerHTML = payments.map((p) => `
       <tr>
-        <td>${p.clients?.name ?? '—'}</td>
+        <td>${esc(p.clients?.name) || '—'}</td>
         <td>${currencyUtils.format(p.amount)}</td>
         <td>${dateUtils.format(p.due_date + 'T00:00:00')}</td>
         <td><span class="badge badge--${p.status}">${p.status}</span></td>
         <td>
           ${p.status !== 'paid' ? `
-            <button class="btn btn--primary btn--sm" onclick="markPaid('${p.id}')">
+            <button class="btn btn--primary btn--sm" onclick="markPaid('${esc(p.id)}')">
               ✓ Pago
             </button>
           ` : '—'}

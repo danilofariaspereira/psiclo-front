@@ -4,6 +4,7 @@ import { renderHeader } from '../components/Header.js';
 import { store } from '../state/store.js';
 import { currencyUtils } from '../utils/currency.js';
 import { dateUtils } from '../utils/date.js';
+import { esc } from '../utils/sanitize.js';
 
 const API = 'https://psiclo-back.vercel.app/api';
 let lastLeadCount = 0;
@@ -119,9 +120,9 @@ async function loadUpcoming() {
     tbody.innerHTML = data.map((a) => `
       <tr>
         <td>${dateUtils.formatTime(a.scheduled_at)}</td>
-        <td>${a.clients?.name ?? '—'}</td>
+        <td>${esc(a.clients?.name) || '—'}</td>
         <td>${a.modality === 'online' ? '🌐 Online' : '🏢 Presencial'}</td>
-        <td><span class="badge badge--${a.status}">${{ scheduled:'Agendado', confirmed:'Confirmado', completed:'Concluído', cancelled:'Cancelado', no_show:'Não compareceu' }[a.status] || a.status}</span></td>
+        <td><span class="badge badge--${a.status}">${{ scheduled:'Agendado', confirmed:'Confirmado', completed:'Concluído', cancelled:'Cancelado', no_show:'Não compareceu' }[a.status] || esc(a.status)}</span></td>
       </tr>
     `).join('');
   } catch (e) {

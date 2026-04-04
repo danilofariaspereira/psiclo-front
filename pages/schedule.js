@@ -5,6 +5,8 @@ import { Calendar } from '../components/Calendar.js';
 import { Modal } from '../components/Modal.js';
 import { notify } from '../utils/notify.js';
 import { dateUtils } from '../utils/date.js';
+import { store } from '../state/store.js';
+import { esc } from '../utils/sanitize.js';
 
 const API = 'https://psiclo-back.vercel.app/api';
 let scheduleConfig = null;
@@ -26,6 +28,7 @@ async function init() {
   const session = await authService.getSession();
   if (!session) { window.location.href = './login.html'; return; }
 
+  store.set('professional', session.professional);
   renderSidebar('schedule');
   renderHeader('Agenda');
 
@@ -190,15 +193,15 @@ function renderAppts(appts, dateStr) {
     <div class="appt-card appt-card--${a.status}">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <span class="appt-card__time">${dateUtils.formatTime(a.scheduled_at)}</span>
-        <span class="appt-card__status" style="background:${STATUS_COLOR[a.status]}22;color:${STATUS_COLOR[a.status]}">${STATUS_PT[a.status] || a.status}</span>
+        <span class="appt-card__status" style="background:${STATUS_COLOR[a.status]}22;color:${STATUS_COLOR[a.status]}">${STATUS_PT[a.status] || esc(a.status)}</span>
       </div>
-      <div class="appt-card__client">${a.clients?.name ?? '—'}</div>
+      <div class="appt-card__client">${esc(a.clients?.name) || '—'}</div>
       <div class="appt-card__modality">${a.modality === 'online' ? '🌐 Online' : '🏢 Presencial'}</div>
-      ${a.notes ? `<div style="font-size:.8rem;color:var(--color-text-muted);font-style:italic">${a.notes}</div>` : ''}
+      ${a.notes ? `<div style="font-size:.8rem;color:var(--color-text-muted);font-style:italic">${esc(a.notes)}</div>` : ''}
       <div class="appt-card__actions">
         ${a.status !== 'completed' && a.status !== 'cancelled' ? `
-          <button class="btn btn--primary btn--sm" onclick="openCompleteModal('${a.id}','${a.clients?.name ?? ''}')">Concluir</button>
-          <button class="btn btn--ghost btn--sm" onclick="cancelAppt('${a.id}')">Cancelar</button>
+          <button class="btn btn--primary btn--sm" onclick="openCompleteModal('${esc(a.id)}','${esc(a.clients?.name ?? '')}')">Concluir</button>
+          <button class="btn btn--ghost btn--sm" onclick="cancelAppt('${esc(a.id)}')">Cancelar</button>
         ` : ''}
       </div>
     </div>

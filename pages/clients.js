@@ -4,6 +4,7 @@ import { renderHeader } from '../components/Header.js';
 import { Modal } from '../components/Modal.js';
 import { notify } from '../utils/notify.js';
 import { store } from '../state/store.js';
+import { esc } from '../utils/sanitize.js';
 
 const API = 'https://psiclo-back.vercel.app/api';
 
@@ -38,14 +39,14 @@ async function loadClients() {
     }
     tbody.innerHTML = data.map(c => `
       <tr>
-        <td>${c.name}</td>
-        <td>${c.phone || '—'}</td>
-        <td>${c.email || '—'}</td>
+        <td>${esc(c.name)}</td>
+        <td>${esc(c.phone) || '—'}</td>
+        <td>${esc(c.email) || '—'}</td>
         <td>${c.birth_date ? new Date(c.birth_date).toLocaleDateString('pt-BR') : '—'}</td>
         <td><span class="badge ${c.active ? 'badge--converted' : 'badge--lost'}">${c.active ? 'Ativo' : 'Inativo'}</span></td>
         <td style="white-space:nowrap">
-          <button class="btn btn--primary btn--sm" onclick="openClientHistory('${c.id}','${c.name}')">Histórico</button>
-          <button class="btn btn--ghost btn--sm" onclick="deleteClient('${c.id}','${c.name}')">Remover</button>
+          <button class="btn btn--primary btn--sm" onclick="openClientHistory('${esc(c.id)}','${esc(c.name)}')">Histórico</button>
+          <button class="btn btn--ghost btn--sm" onclick="deleteClient('${esc(c.id)}','${esc(c.name)}')">Remover</button>
         </td>
       </tr>
     `).join('');
@@ -89,42 +90,24 @@ function openNewClientModal() {
 }
 
 window.openClientHistory = async (id, name) => {
-  let content = `<p style="text-align:center;color:var(--color-text-muted)">Carregando...</p>`;
-  Modal.open({ title: `Histórico — ${name}`, content, hideFooter: true });
+  Modal.open({ title: `Histórico — ${name}`, content: `<p style="text-align:center;color:var(--color-text-muted)">Carregando...</p>`, hideFooter: true });
 
   try {
-    const [appts, payments] = await Promise.all([
-      apiFetch(`/clients/${id}/history`).catch(() => ({ appointments: [], payments: [] })),
-    ]);
-    const data = appts;
+    const data = await apiFetch(`/clients/${id}/history`);
 
     const apptRows = (data.appointments || []).map(a => `
       <tr>
         <td>${new Date(a.scheduled_at).toLocaleDateString('pt-BR')}</td>
         <td>${new Date(a.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</td>
-        <td>${{ scheduled: 'Agendado', confirmed: 'Confirmado', completed: 'Concluído', cancelled: 'Cancelado', no_show: 'Não compareceu' }[a.status] || a.status}</td>
-      </tr>`).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--color-text-muted)">Nenhum agendamento.</td></tr>';
-
-    const payRows = (data.payments || []).map(p => `
-      <tr>
-        <td>${new Date(p.due_date + 'T12:00:00').toLocaleDateString('pt-BR')}</td>
-        <td>R$ ${Number(p.amount).toFixed(2).replace('.', ',')}</td>
-        <td>${{ paid: 'Pago', pending: 'Pendente', overdue: 'Vencido', cancelled: 'Cancelado' }[p.status] || p.status}</td>
-      </tr>`).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--color-text-muted)">Nenhum pagamento.</td></tr>';
+        <td>${{ scheduled: 'Agendado', confirmed: 'Confirmado', completed: 'Concluído', cancelled: 'Cancelado', no_show: 'Não compareceu' }[a.status] || esc(a.status)}</td>
+        <td style="font-size:.82rem;color:var(--color-text-muted);font-style:italic">${esc(a.notes) || '—'}</td>
+      </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--color-text-muted)">Nenhum agendamento.</td></tr>';
 
     const newContent = `
-      <p style="font-weight:700;margin-bottom:.5rem">Agendamentos</p>
-      <div class="table-wrapper" style="margin-bottom:1.5rem">
-        <table class="table">
-          <thead><tr><th>Data</th><th>Horário</th><th>Status</th></tr></thead>
-          <tbody>${apptRows}</tbody>
-        </table>
-      </div>
-      <p style="font-weight:700;margin-bottom:.5rem">Pagamentos</p>
       <div class="table-wrapper">
         <table class="table">
-          <thead><tr><th>Vencimento</th><th>Valor</th><th>Status</th></tr></thead>
-          <tbody>${payRows}</tbody>
+          <thead><tr><th>Data</th><th>Horário</th><th>Status</th><th>Observações</th></tr></thead>
+          <tbody>${apptRows}</tbody>
         </table>
       </div>`;
 

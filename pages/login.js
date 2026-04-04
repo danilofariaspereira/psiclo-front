@@ -6,7 +6,14 @@ const errorEl = document.getElementById('login-error');
 const btn = document.getElementById('login-btn');
 
 // ── Tema ─────────────────────────────────────────────────────
-const savedTheme = localStorage.getItem('sa-theme') || 'light';
+function getThemeCookie() {
+  return document.cookie.split('; ').find(r => r.startsWith('ui-theme='))?.split('=')[1] || 'light';
+}
+function setThemeCookie(theme) {
+  document.cookie = `ui-theme=${theme};path=/;max-age=31536000;SameSite=Lax`;
+}
+
+const savedTheme = getThemeCookie();
 if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
 updateLoginThemeBtn(savedTheme);
 
@@ -14,7 +21,7 @@ document.getElementById('loginThemeToggle').addEventListener('click', () => {
   const current = document.documentElement.getAttribute('data-theme') || 'light';
   const next = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('sa-theme', next);
+  setThemeCookie(next);
   updateLoginThemeBtn(next);
 });
 
