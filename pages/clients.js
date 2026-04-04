@@ -134,6 +134,8 @@ window.openClientHistory = async (id, name) => {
     document.querySelector('#psiclo-modal .modal__body').innerHTML = '<p style="color:var(--color-error)">Erro ao carregar histórico.</p>';
   }
 };
+
+window.deleteClient = async (id, name) => {
   if (!confirm(`Remover "${name}"?\n\nEsta ação é irreversível (LGPD).`)) return;
   try {
     await apiFetch(`/clients/${id}`, { method: 'DELETE' });
