@@ -79,6 +79,7 @@ function renderCards(clients) {
       </div>
       <div class="client-card__actions" style="justify-content:flex-end">
         <button class="btn btn--primary btn--sm" onclick="openClientHistory('${esc(c.id)}','${esc(c.name)}')">Histórico</button>
+        <button class="btn btn--ghost btn--sm" onclick="editClient('${esc(c.id)}')">Editar</button>
         <button class="btn btn--ghost btn--sm" onclick="deleteClient('${esc(c.id)}','${esc(c.name)}')">Remover</button>
       </div>
     </div>
@@ -152,6 +153,44 @@ window.openClientHistory = async (id, name) => {
   } catch {
     document.querySelector('#psiclo-modal .modal__body').innerHTML = '<p style="color:var(--color-error)">Erro ao carregar histórico.</p>';
   }
+};
+
+window.editClient = async (id) => {
+  // Busca dados atuais do cliente
+  const client = allClients.find(c => c.id === id);
+  if (!client) return;
+
+  Modal.open({
+    title: `Editar — ${esc(client.name)}`,
+    confirmLabel: 'Salvar',
+    content: `
+      <div class="form-group"><label class="form-label">Nome *</label><input id="ec-name" class="form-input" value="${esc(client.name)}" /></div>
+      <div class="form-group"><label class="form-label">Telefone</label><input id="ec-phone" class="form-input" value="${esc(client.phone||'')}" placeholder="(21) 99999-9999" /></div>
+      <div class="form-group"><label class="form-label">E-mail</label><input id="ec-email" type="email" class="form-input" value="${esc(client.email||'')}" /></div>
+      <div class="form-group"><label class="form-label">Data de nascimento *</label><input id="ec-birth" type="date" class="form-input" value="${client.birth_date || ''}" /></div>
+      <div class="form-group"><label class="form-label">CPF (opcional)</label><input id="ec-cpf" class="form-input" value="${esc(client.cpf||'')}" placeholder="000.000.000-00" maxlength="14" /></div>
+    `,
+    onConfirm: async () => {
+      const name = document.getElementById('ec-name').value.trim();
+      const birth_date = document.getElementById('ec-birth').value;
+      if (!name) { notify.error('Nome obrigatório.'); return; }
+      if (!birth_date) { notify.error('Data de nascimento obrigatória.'); return; }
+      try {
+        await apiFetch(`/clients/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            name,
+            phone: document.getElementById('ec-phone').value.trim() || null,
+            email: document.getElementById('ec-email').value.trim() || null,
+            birth_date,
+            cpf: document.getElementById('ec-cpf').value.trim() || null,
+          }),
+        });
+        notify.success('Cliente atualizado!');
+        loadClients();
+      } catch { notify.error('Erro ao atualizar cliente.'); }
+    },
+  });
 };
 
 window.deleteClient = async (id, name) => {

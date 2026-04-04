@@ -263,6 +263,8 @@ async function loadCharts() {
         }],
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         cutout: '72%',
         plugins: {
           legend: { display: false },
