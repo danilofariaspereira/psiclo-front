@@ -4,6 +4,7 @@ import { renderHeader } from '../components/Header.js';
 import { Modal } from '../components/Modal.js';
 import { notify } from '../utils/notify.js';
 import { dateUtils } from '../utils/date.js';
+import { store } from '../state/store.js';
 
 const API = 'https://psiclo-back.vercel.app/api';
 
@@ -24,6 +25,7 @@ async function init() {
   const session = await authService.getSession();
   if (!session) { window.location.href = './login.html'; return; }
 
+  store.set('professional', session.professional);
   renderSidebar('leads');
   renderHeader('Leads');
 

@@ -6,6 +6,7 @@ import { notify } from '../utils/notify.js';
 import { currencyUtils } from '../utils/currency.js';
 import { dateUtils } from '../utils/date.js';
 import { esc } from '../utils/sanitize.js';
+import { store } from '../state/store.js';
 
 const API = 'https://psiclo-back.vercel.app/api';
 
@@ -26,6 +27,7 @@ async function init() {
   const session = await authService.getSession();
   if (!session) { window.location.href = './login.html'; return; }
 
+  store.set('professional', session.professional);
   renderSidebar('financial');
   renderHeader('Financeiro');
 
