@@ -28,7 +28,8 @@ async function init() {
   renderHeader('Financeiro');
   loadAll();
   document.getElementById('btn-add-expense').addEventListener('click', openAddExpenseModal);
-  document.getElementById('card-meta').addEventListener('click', openSetGoalModal);
+  document.getElementById('btn-set-goal').addEventListener('click', openSetGoalModal);
+  document.getElementById('btn-filter-payments').addEventListener('click', loadPayments);
 }
 
 async function loadAll() {
@@ -90,19 +91,41 @@ function renderExpenseCards(expenses) {
 
 async function loadPayments() {
   const tbody = document.getElementById('payments-body');
+  const totalEl = document.getElementById('payments-total');
+  const clientFilter = document.getElementById('filter-client')?.value.trim().toLowerCase() || '';
+  const dateFrom = document.getElementById('filter-date-from')?.value || '';
+  const dateTo = document.getElementById('filter-date-to')?.value || '';
+
   try {
     const payments = await apiFetch('/financial/payments?status=paid');
     if (!payments.length) {
       tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Nenhum pagamento recebido.</td></tr>`;
+      totalEl.textContent = '';
       return;
     }
-    tbody.innerHTML = payments.map(p => {
-      // Extrai forma de pagamento do campo notes se tiver prefixo [método]
+
+    const METHOD_PT = { pix: 'PIX', dinheiro: 'Dinheiro', cartao: 'Cartão', plano_saude: 'Plano de saúde' };
+
+    // Aplica filtros no frontend
+    let filtered = payments.filter(p => {
+      const name = (p.clients?.name || '').toLowerCase();
+      const date = p.due_date || '';
+      const matchClient = !clientFilter || name.includes(clientFilter);
+      const matchFrom = !dateFrom || date >= dateFrom;
+      const matchTo = !dateTo || date <= dateTo;
+      return matchClient && matchFrom && matchTo;
+    });
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Nenhum resultado para os filtros aplicados.</td></tr>`;
+      totalEl.textContent = '';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(p => {
       let method = '—';
-      let notes = p.notes || '';
-      const match = notes.match(/^\[([^\]]+)\]/);
-      if (match) { method = match[1]; }
-      const METHOD_PT = { pix: 'PIX', dinheiro: 'Dinheiro', cartao: 'Cartão', plano_saude: 'Plano de saúde' };
+      const match = (p.notes || '').match(/^\[([^\]]+)\]/);
+      if (match) method = match[1];
       return `<tr>
         <td>${esc(p.clients?.name) || '—'}</td>
         <td>${currencyUtils.format(p.amount)}</td>
@@ -110,6 +133,13 @@ async function loadPayments() {
         <td>${METHOD_PT[method] || esc(method)}</td>
       </tr>`;
     }).join('');
+
+    // Total dos resultados filtrados
+    const total = filtered.reduce((s, p) => s + Number(p.amount), 0);
+    const clientLabel = clientFilter
+      ? `Total de ${clientFilter}: `
+      : 'Total do período: ';
+    totalEl.innerHTML = `<strong>${clientLabel}${currencyUtils.format(total)}</strong> (${filtered.length} pagamento${filtered.length !== 1 ? 's' : ''})`;
   } catch {
     tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--color-error)">Erro ao carregar.</td></tr>`;
   }

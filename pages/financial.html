@@ -20,7 +20,13 @@
 
       <div class="page-header">
         <h1 class="page-title">Financeiro</h1>
-        <button class="btn btn--primary" id="btn-add-expense">+ Nova despesa</button>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn--ghost" id="btn-set-goal">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            Definir meta
+          </button>
+          <button class="btn btn--primary" id="btn-add-expense">+ Nova despesa</button>
+        </div>
       </div>
 
       <!-- 4 cards -->
@@ -37,25 +43,34 @@
           <p class="stat-card__label">Falta para a meta</p>
           <p class="stat-card__value" id="f-remaining">—</p>
         </div>
-        <div class="stat-card" style="cursor:pointer" id="card-meta" title="Clique para definir meta">
+        <div class="stat-card">
           <p class="stat-card__label">Meta do mês</p>
           <p class="stat-card__value" id="f-goal">—</p>
-          <p style="font-size:.65rem;color:rgba(255,255,255,.55);margin-top:2px">Clique para definir</p>
         </div>
       </div>
 
       <!-- Despesas em cards -->
       <div class="card" style="margin-bottom:1.5rem">
-        <p class="card__title">Despesas fixas</p>
-        <div id="expenses-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem;margin-top:.75rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+          <p class="card__title" style="margin:0">Despesas fixas</p>
+        </div>
+        <div id="expenses-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem">
           <p style="color:var(--color-text-muted);font-size:.85rem;grid-column:1/-1">Carregando...</p>
         </div>
       </div>
 
-      <!-- Pagamentos recebidos -->
+      <!-- Pagamentos recebidos com filtros -->
       <div class="card">
-        <p class="card__title">Pagamentos recebidos</p>
-        <div class="table-wrapper" style="margin-top:.75rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem">
+          <p class="card__title" style="margin:0">Pagamentos recebidos</p>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+            <input type="text" id="filter-client" class="form-input" placeholder="Filtrar por cliente..." style="width:180px;padding:6px 10px;font-size:.82rem" />
+            <input type="date" id="filter-date-from" class="form-input" style="width:140px;padding:6px 10px;font-size:.82rem" title="Data inicial" />
+            <input type="date" id="filter-date-to" class="form-input" style="width:140px;padding:6px 10px;font-size:.82rem" title="Data final" />
+            <button class="btn btn--ghost btn--sm" id="btn-filter-payments">Filtrar</button>
+          </div>
+        </div>
+        <div class="table-wrapper">
           <table class="table">
             <thead><tr><th>Cliente</th><th>Valor</th><th>Data</th><th>Forma</th></tr></thead>
             <tbody id="payments-body">
@@ -63,6 +78,7 @@
             </tbody>
           </table>
         </div>
+        <div id="payments-total" style="text-align:right;margin-top:.75rem;font-size:.85rem;color:var(--color-text-muted)"></div>
       </div>
 
     </main>
