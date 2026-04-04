@@ -68,10 +68,25 @@ async function init() {
   startPolling();
 }
 
+// Data de hoje no fuso de Brasília (evita virar o dia às 21h UTC)
+function todayBR() {
+  return new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    .split('/').reverse().join('-'); // dd/mm/yyyy → yyyy-mm-dd
+}
+
 function startPolling() {
+  // Inicializa contagens com os dados atuais antes de começar o polling
+  Promise.all([
+    apiFetch('/leads?status=new').catch(() => []),
+    apiFetch(`/schedule/appointments?date=${todayBR()}`).catch(() => []),
+  ]).then(([leads, appts]) => {
+    lastLeadCount = leads?.length ?? 0;
+    lastApptCount = appts?.length ?? 0;
+  });
+
   pollingInterval = setInterval(async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = todayBR();
       const [leads, todayAppts] = await Promise.all([
         apiFetch('/leads?status=new'),
         apiFetch(`/schedule/appointments?date=${today}`),
@@ -79,17 +94,16 @@ function startPolling() {
       const newLeadCount = leads?.length ?? 0;
       const newApptCount = todayAppts?.length ?? 0;
 
-      if (newLeadCount > lastLeadCount && lastLeadCount > 0) {
+      if (newLeadCount > lastLeadCount) {
         showNotification('Novo lead recebido!', leads[0]?.name || '');
         loadStats();
       }
 
-      if (newApptCount > lastApptCount && lastApptCount > 0) {
-        // Encontra o(s) agendamento(s) novo(s) — os que não estavam antes
+      if (newApptCount > lastApptCount) {
         const newest = todayAppts[todayAppts.length - 1];
         const clientName = newest?.clients?.name || '';
         const time = newest?.scheduled_at
-          ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
           : '';
         showNotification(
           `Novo agendamento — ${clientName}`,
@@ -115,7 +129,7 @@ async function loadStats() {
       apiFetch('/financial/summary'),
       apiFetch('/leads?status=new'),
       apiFetch('/clients/active'),
-      apiFetch(`/schedule/appointments?date=${new Date().toISOString().split('T')[0]}`),
+      apiFetch(`/schedule/appointments?date=${todayBR()}`),
     ]);
 
     document.getElementById('stat-leads').textContent = leads?.length ?? 0;
@@ -132,8 +146,7 @@ async function loadStats() {
 async function loadUpcoming() {
   const tbody = document.getElementById('upcoming-body');
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const data = await apiFetch(`/schedule/appointments?date=${today}`);
+    const data = await apiFetch(`/schedule/appointments?date=${todayBR()}`);
 
     if (!data.length) {
       tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Nenhuma sessão hoje.</td></tr>`;

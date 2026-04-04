@@ -26,6 +26,12 @@ async function apiFetch(path, options = {}) {
   return res.status === 204 ? null : res.json();
 }
 
+// Data de hoje no fuso de Brasília
+function todayBR() {
+  return new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    .split('/').reverse().join('-');
+}
+
 async function init() {
   const session = await authService.getSession();
   if (!session) { window.location.href = './login.html'; return; }
@@ -56,25 +62,23 @@ async function init() {
   document.getElementById('btn-config').addEventListener('click', openConfigModal);
 
   // Polling para notificar novos agendamentos vindos da landing page
-  const today = new Date().toISOString().split('T')[0];
   try {
-    const initial = await apiFetch(`/schedule/appointments?date=${today}`).catch(() => []);
+    const initial = await apiFetch(`/schedule/appointments?date=${todayBR()}`).catch(() => []);
     lastApptCount = initial?.length ?? 0;
   } catch (_) {}
 
   schedulePolling = setInterval(async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = todayBR();
       const appts = await apiFetch(`/schedule/appointments?date=${today}`);
       const count = appts?.length ?? 0;
-      if (count > lastApptCount && lastApptCount > 0) {
+      if (count > lastApptCount) {
         const newest = appts[appts.length - 1];
         const clientName = newest?.clients?.name || '';
         const time = newest?.scheduled_at
-          ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
           : '';
         showApptToast(`Novo agendamento — ${clientName}`, time ? `Horário: ${time}` : '');
-        // Recarrega o dia atual se estiver visualizando hoje
         const blockBtn = document.getElementById('btn-block-day');
         if (blockBtn.dataset.date === today) loadDay(new Date(today + 'T12:00:00'));
       }
@@ -99,9 +103,9 @@ async function init() {
         method: isBlocked ? 'DELETE' : 'POST',
         body: JSON.stringify({ date, reason: 'Folga' }),
       });
-      notify(`Dia ${action}ado com sucesso!`, 'success');
+      notify.success(`Dia ${action}ado com sucesso!`);
       loadDay(new Date(date + 'T12:00:00'));
-    } catch { notify(`Erro ao ${action} dia.`, 'error'); }
+    } catch { notify.error(`Erro ao ${action} dia.`); }
   });
 }
 
@@ -138,7 +142,7 @@ async function openConfigModal() {
     `,
     onConfirm: async () => {
       const work_days = [...document.querySelectorAll('.day-check:checked')].map(c => parseInt(c.value));
-      if (!work_days.length) { notify('Selecione ao menos um dia.', 'error'); return; }
+      if (!work_days.length) { notify.error('Selecione ao menos um dia.'); return; }
       try {
         scheduleConfig = await apiFetch('/schedule/config', {
           method: 'PUT',
@@ -150,8 +154,8 @@ async function openConfigModal() {
             break_between: parseInt(document.getElementById('cfg-break').value),
           }),
         });
-        notify('Horários salvos!', 'success');
-      } catch { notify('Erro ao salvar.', 'error'); }
+        notify.success('Horários salvos!');
+      } catch { notify.error('Erro ao salvar.'); }
     },
   });
 }
