@@ -220,13 +220,6 @@ async function loadCharts() {
       apiFetch('/financial/expenses'),
     ]);
 
-    // Gráfico de linha — faturamento diário
-    const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    const monthLabel = MONTHS[month - 1];
-    const monthData = paymentMap[monthLabel] || { total: 0 };
-
-    // Distribui o total do mês pelos dias (simplificado — sem dados por dia ainda)
-    // Busca pagamentos do mês para distribuir por dia
     const payments = await apiFetch(`/financial/payments`).catch(() => []);
     const dailyTotals = Array(daysInMonth).fill(0);
     (payments || []).forEach(p => {
@@ -254,6 +247,7 @@ async function loadCharts() {
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
           x: { ticks: { font: { size: 10 } } },
@@ -304,6 +298,7 @@ async function loadCharts() {
     });
   } catch (_) {}
 }
+
 
 // ── Mapa de calor ─────────────────────────────────────────────
 const MONTHS_LABELS = ['Todos','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -437,48 +432,53 @@ window.switchPayMonth = (month) => loadPaymentMap(month);
 
 // ── Polling ───────────────────────────────────────────────────
 function startPolling() {
-  // Inicializa com dados atuais
-  Promise.all([
-    apiFetch('/leads?status=new').catch(() => []),
-    apiFetch('/schedule/appointments').catch(() => []),
-  ]).then(([leads, appts]) => {
+  // Inicializa contadores com dados atuais
+  apiFetch('/leads?status=new').catch(() => []).then(leads => {
     lastLeadCount = leads?.length ?? 0;
+  });
+  apiFetch(`/schedule/appointments?date=${todayBR()}`).catch(() => []).then(appts => {
     lastApptCount = appts?.length ?? 0;
   });
 
   pollingInterval = setInterval(async () => {
     try {
-      const [leads, allAppts] = await Promise.all([
+      const today = todayBR();
+      const [leads, todayAppts] = await Promise.all([
         apiFetch('/leads?status=new'),
-        apiFetch('/schedule/appointments'),
+        apiFetch(`/schedule/appointments?date=${today}`),
       ]);
-      const newLeadCount = leads?.length ?? 0;
-      const newApptCount = allAppts?.length ?? 0;
 
-      if (newLeadCount > lastLeadCount) {
-        showNotification('Novo lead recebido!', esc(leads[0]?.name || ''));
-        loadStats();
-      }
+      const newLeadCount = leads?.length ?? 0;
+      const newApptCount = todayAppts?.length ?? 0;
+
+      // Novo agendamento hoje
       if (newApptCount > lastApptCount) {
-        const newest = allAppts[allAppts.length - 1];
+        const newest = todayAppts[todayAppts.length - 1];
         const clientName = newest?.clients?.name || '';
         const time = newest?.scheduled_at
           ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
           : '';
-        const date = newest?.scheduled_at
-          ? new Date(newest.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' })
-          : '';
         showNotification(
-          `Novo agendamento — ${esc(clientName)}`,
-          date && time ? `${date} às ${time}` : ''
+          `📅 Novo agendamento — ${esc(clientName)}`,
+          time ? `Hoje às ${time}` : 'Novo agendamento recebido'
         );
         loadUpcoming();
         loadStats();
       }
-      lastLeadCount = newLeadCount;
+
+      // Novo lead (Instagram, WhatsApp, etc.)
+      if (newLeadCount > lastLeadCount) {
+        const newest = leads[0];
+        showNotification('🔔 Novo lead recebido!', esc(newest?.name || ''));
+        loadStats();
+      }
+
       lastApptCount = newApptCount;
-    } catch (_) {}
-  }, 60000); // 60s — evita rate limit
+      lastLeadCount = newLeadCount;
+    } catch (err) {
+      console.warn('[polling] erro:', err.message);
+    }
+  }, 30000); // 30s
 }
 
 window.addEventListener('beforeunload', () => { if (pollingInterval) clearInterval(pollingInterval); });
