@@ -1,13 +1,12 @@
 import { authService } from '../services/auth.service.js';
 import { renderSidebar } from '../components/Sidebar.js';
 import { renderHeader } from '../components/Header.js';
-import { Modal } from '../components/Modal.js';
-import { notify } from '../utils/notify.js';
 import { store } from '../state/store.js';
 import { currencyUtils } from '../utils/currency.js';
 
 const API = 'https://psiclo-back.vercel.app/api';
 let goalChart = null;
+let barChart = null;
 
 async function apiFetch(path, options = {}) {
   const res = await fetch(`${API}${path}`, {
@@ -26,13 +25,10 @@ async function init() {
   renderSidebar('balance');
   renderHeader('Balanço financeiro');
   loadAll();
-
-  document.getElementById('btn-add-expense').addEventListener('click', openAddExpenseModal);
-  document.getElementById('btn-set-goal').addEventListener('click', openSetGoalModal);
 }
 
 async function loadAll() {
-  const [summary, expenses, goal] = await Promise.all([
+  const [summary, expenses, goalData] = await Promise.all([
     apiFetch('/financial/summary').catch(() => ({ paid: 0 })),
     apiFetch('/financial/expenses').catch(() => []),
     apiFetch('/financial/goal').catch(() => ({ monthly_goal: 0 })),
@@ -41,62 +37,58 @@ async function loadAll() {
   const revenue = summary.paid || 0;
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const profit = revenue - totalExpenses;
-  const monthlyGoal = goal.monthly_goal || 0;
+  const goal = goalData.monthly_goal || 0;
 
   document.getElementById('b-revenue').textContent = currencyUtils.format(revenue);
   document.getElementById('b-expenses').textContent = currencyUtils.format(totalExpenses);
   document.getElementById('b-profit').textContent = currencyUtils.format(profit);
   document.getElementById('b-profit').className = `stat-card__value ${profit >= 0 ? 'stat-card__value--green' : 'stat-card__value--red'}`;
-  document.getElementById('b-goal').textContent = monthlyGoal ? currencyUtils.format(monthlyGoal) : 'Não definida';
+  document.getElementById('b-goal').textContent = goal ? currencyUtils.format(goal) : 'Não definida';
 
-  renderGoalChart(profit, monthlyGoal);
-  renderExpenses(expenses);
+  renderGoalChart(profit, goal);
+  renderBarChart(revenue, totalExpenses, goal);
+
+  // Celebração se meta atingida
+  if (goal > 0 && revenue >= goal) showGoalCelebration(revenue, goal);
 }
 
 function renderGoalChart(profit, goal) {
   const ctx = document.getElementById('chart-goal');
   if (goalChart) goalChart.destroy();
 
-  const reached = Math.min(profit, goal);
-  const remaining = Math.max(goal - profit, 0);
   const pct = goal > 0 ? Math.min(Math.round((profit / goal) * 100), 100) : 0;
+  const remaining = Math.max(goal - profit, 0);
 
   const msgEl = document.getElementById('goal-msg');
   if (!goal) {
-    msgEl.textContent = 'Defina uma meta para acompanhar seu progresso.';
+    msgEl.textContent = 'Defina uma meta em Financeiro.';
   } else if (profit >= goal) {
-    msgEl.textContent = `🎉 Meta atingida! Você lucrou ${currencyUtils.format(profit - goal)} acima da meta.`;
-    msgEl.style.color = 'var(--color-success)';
+    msgEl.textContent = `Meta atingida! +${currencyUtils.format(profit - goal)}`;
+    msgEl.style.color = 'var(--color-paid)';
   } else {
-    msgEl.textContent = `Faltam ${currencyUtils.format(remaining)} para atingir sua meta (${pct}% concluído).`;
+    msgEl.textContent = `${pct}% — faltam ${currencyUtils.format(remaining)}`;
     msgEl.style.color = 'var(--color-text-muted)';
   }
 
   goalChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['Lucro', 'Falta'],
       datasets: [{
-        data: goal > 0 ? [Math.max(reached, 0), remaining] : [0, 1],
-        backgroundColor: ['#0288d1', 'rgba(0,0,0,0.08)'],
+        data: goal > 0 ? [Math.max(profit, 0), remaining] : [0, 1],
+        backgroundColor: ['#0288d1', 'rgba(0,0,0,0.07)'],
         borderWidth: 0,
       }],
     },
     options: {
-      cutout: '75%',
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: { label: (c) => ` ${currencyUtils.format(c.raw)}` },
-        },
-      },
+      cutout: '72%',
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${currencyUtils.format(c.raw)}` } } },
     },
     plugins: [{
-      id: 'centerText',
+      id: 'center',
       beforeDraw(chart) {
         const { ctx, width, height } = chart;
         ctx.save();
-        ctx.font = 'bold 1.4rem Inter, sans-serif';
+        ctx.font = 'bold 1rem Inter,sans-serif';
         ctx.fillStyle = '#1a237e';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -107,85 +99,56 @@ function renderGoalChart(profit, goal) {
   });
 }
 
-function renderExpenses(expenses) {
-  const tbody = document.getElementById('expenses-body');
-  if (!expenses.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Nenhuma despesa cadastrada.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = expenses.map(e => `
-    <tr>
-      <td>${e.name}</td>
-      <td><span class="badge badge--scheduled">${e.category}</span></td>
-      <td>${currencyUtils.format(e.amount)}</td>
-      <td><button class="btn btn--danger btn--sm" onclick="deleteExpense('${e.id}')">Remover</button></td>
-    </tr>
-  `).join('');
-}
+function renderBarChart(revenue, expenses, goal) {
+  const ctx = document.getElementById('chart-bar');
+  if (barChart) barChart.destroy();
 
-function openAddExpenseModal() {
-  Modal.open({
-    title: 'Nova despesa fixa',
-    confirmLabel: 'Adicionar',
-    content: `
-      <div class="form-group"><label class="form-label">Nome *</label><input id="exp-name" class="form-input" placeholder="Ex: Aluguel, Internet, Luz..." /></div>
-      <div class="form-group">
-        <label class="form-label">Categoria</label>
-        <select id="exp-cat" class="form-select">
-          <option value="aluguel">Aluguel</option>
-          <option value="internet">Internet</option>
-          <option value="energia">Energia elétrica</option>
-          <option value="agua">Água</option>
-          <option value="telefone">Telefone</option>
-          <option value="software">Software/Assinatura</option>
-          <option value="outros">Outros</option>
-        </select>
-      </div>
-      <div class="form-group"><label class="form-label">Valor mensal (R$) *</label><input type="number" id="exp-amount" class="form-input" placeholder="0,00" min="0" step="0.01" /></div>
-    `,
-    onConfirm: async () => {
-      const name = document.getElementById('exp-name').value.trim();
-      const amount = parseFloat(document.getElementById('exp-amount').value);
-      const category = document.getElementById('exp-cat').value;
-      if (!name || !amount) { notify('Preencha todos os campos.', 'error'); return; }
-      try {
-        await apiFetch('/financial/expenses', { method: 'POST', body: JSON.stringify({ name, amount, category }) });
-        notify('Despesa adicionada!', 'success');
-        loadAll();
-      } catch { notify('Erro ao adicionar.', 'error'); }
+  const labels = ['Faturamento', 'Despesas'];
+  const data = [revenue, expenses];
+  if (goal > 0) { labels.push('Meta'); data.push(goal); }
+
+  barChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: ['rgba(2,136,209,0.8)', 'rgba(217,78,78,0.8)', 'rgba(26,35,126,0.6)'],
+        borderRadius: 6,
+        borderWidth: 0,
+      }],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { callback: v => `R$${v}`, font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+      },
     },
   });
 }
 
-function openSetGoalModal() {
-  Modal.open({
-    title: 'Definir meta mensal',
-    confirmLabel: 'Salvar',
-    content: `
-      <div class="form-group">
-        <label class="form-label">Meta de lucro líquido mensal (R$)</label>
-        <input type="number" id="goal-input" class="form-input" placeholder="Ex: 5000" min="0" step="100" />
-        <p style="font-size:.8rem;color:var(--color-text-muted);margin-top:.3rem">Lucro = Receita recebida − Despesas fixas</p>
-      </div>
-    `,
-    onConfirm: async () => {
-      const val = parseFloat(document.getElementById('goal-input').value);
-      if (!val || val <= 0) { notify('Informe um valor válido.', 'error'); return; }
-      try {
-        await apiFetch('/financial/goal', { method: 'PUT', body: JSON.stringify({ monthly_goal: val }) });
-        notify('Meta salva!', 'success');
-        loadAll();
-      } catch { notify('Erro ao salvar meta.', 'error'); }
-    },
-  });
-}
+function showGoalCelebration(revenue, goal) {
+  const existing = document.getElementById('goal-celebration');
+  if (existing) return; // só mostra uma vez
 
-window.deleteExpense = async (id) => {
-  try {
-    await apiFetch(`/financial/expenses/${id}`, { method: 'DELETE' });
-    notify('Despesa removida.', 'success');
-    loadAll();
-  } catch { notify('Erro ao remover.', 'error'); }
-};
+  const el = document.createElement('div');
+  el.id = 'goal-celebration';
+  el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem';
+  el.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:2rem;max-width:380px;width:100%;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,.25)">
+      <svg width="48" height="48" fill="none" stroke="#16a34a" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:.75rem">
+        <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+      </svg>
+      <h2 style="font-size:1.3rem;font-weight:700;color:#1a237e;margin-bottom:.5rem">Parabéns! Meta atingida!</h2>
+      <p style="font-size:.9rem;color:#64748b;margin-bottom:1rem">
+        Você faturou <strong>${currencyUtils.format(revenue)}</strong> este mês,
+        superando sua meta de <strong>${currencyUtils.format(goal)}</strong>.
+      </p>
+      <button onclick="document.getElementById('goal-celebration').remove()" class="btn btn--primary" style="width:100%;justify-content:center">Fechar</button>
+    </div>`;
+  document.body.appendChild(el);
+}
 
 init();

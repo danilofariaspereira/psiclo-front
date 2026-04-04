@@ -21,21 +21,20 @@
 
       <div class="page-header">
         <h1 class="page-title">Balanço financeiro</h1>
-        <button class="btn btn--ghost" id="btn-set-goal"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Definir meta</button>
       </div>
 
-      <!-- Cards resumo -->
-      <div class="stats-grid" style="margin-bottom:var(--space-xl)">
+      <!-- 4 cards -->
+      <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem">
         <div class="stat-card">
-          <p class="stat-card__label">Receita do mês</p>
+          <p class="stat-card__label">Faturamento</p>
           <p class="stat-card__value stat-card__value--green" id="b-revenue">—</p>
         </div>
         <div class="stat-card">
-          <p class="stat-card__label">Despesas fixas</p>
+          <p class="stat-card__label">Despesas</p>
           <p class="stat-card__value stat-card__value--red" id="b-expenses">—</p>
         </div>
         <div class="stat-card">
-          <p class="stat-card__label">Lucro líquido</p>
+          <p class="stat-card__label">Lucro estimado</p>
           <p class="stat-card__value" id="b-profit">—</p>
         </div>
         <div class="stat-card">
@@ -44,30 +43,18 @@
         </div>
       </div>
 
-      <!-- Gráfico meta -->
-      <div class="card" style="margin-bottom:var(--space-xl)">
-        <p class="card__title">Progresso da meta</p>
-        <div style="max-width:400px;margin:1rem auto">
-          <canvas id="chart-goal"></canvas>
+      <!-- Gráficos lado a lado, menores -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+        <div class="card">
+          <p class="card__title">Progresso da meta</p>
+          <div style="max-width:200px;margin:.5rem auto">
+            <canvas id="chart-goal" height="200"></canvas>
+          </div>
+          <p id="goal-msg" style="text-align:center;font-size:.82rem;color:var(--color-text-muted);margin-top:.4rem"></p>
         </div>
-        <p id="goal-msg" style="text-align:center;font-size:.9rem;color:var(--color-text-muted);margin-top:.5rem"></p>
-      </div>
-
-      <!-- Despesas fixas -->
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-md)">
-          <p class="card__title" style="margin:0">Despesas fixas</p>
-          <button class="btn btn--primary btn--sm" id="btn-add-expense">+ Adicionar</button>
-        </div>
-        <div class="table-wrapper">
-          <table class="table">
-            <thead>
-              <tr><th>Nome</th><th>Categoria</th><th>Valor</th><th>Ações</th></tr>
-            </thead>
-            <tbody id="expenses-body">
-              <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Carregando...</td></tr>
-            </tbody>
-          </table>
+        <div class="card">
+          <p class="card__title">Faturamento vs Despesas</p>
+          <canvas id="chart-bar" height="160"></canvas>
         </div>
       </div>
 

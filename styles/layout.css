@@ -525,3 +525,40 @@
   color: var(--color-text-muted);
   margin-top: .15rem;
 }
+
+/* ── Cards de despesa (Financeiro) ── */
+.expense-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  box-shadow: var(--shadow-sm);
+}
+.expense-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .3rem;
+}
+.expense-card__name {
+  font-weight: 600;
+  font-size: .88rem;
+  color: var(--color-text);
+}
+.expense-card__value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-error);
+  margin-bottom: .3rem;
+}
+.expense-card__btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  color: var(--color-text-muted);
+  border-radius: 4px;
+  transition: background .15s;
+}
+.expense-card__btn:hover { background: var(--color-bg); color: var(--color-text); }
+.expense-card__btn--danger:hover { color: var(--color-error); }

@@ -14,10 +14,7 @@ async function apiFetch(path, options = {}) {
   const res = await fetch(`${API}${path}`, {
     ...options,
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers: { 'Content-Type': 'application/json', ...options.headers },
   });
   if (!res.ok) throw new Error(`Erro ${res.status}`);
   return res.status === 204 ? null : res.json();
@@ -26,102 +23,197 @@ async function apiFetch(path, options = {}) {
 async function init() {
   const session = await authService.getSession();
   if (!session) { window.location.href = './login.html'; return; }
-
   store.set('professional', session.professional);
   renderSidebar('financial');
   renderHeader('Financeiro');
-
-  loadSummary();
-  loadPayments();
-
-  document.getElementById('filter-payment-status').addEventListener('change', loadPayments);
-  document.getElementById('btn-new-payment').addEventListener('click', openNewPaymentModal);
+  loadAll();
+  document.getElementById('btn-add-expense').addEventListener('click', openAddExpenseModal);
+  document.getElementById('card-meta').addEventListener('click', openSetGoalModal);
 }
 
-async function loadSummary() {
-  try {
-    const s = await apiFetch('/financial/summary');
-    document.getElementById('f-paid').textContent = currencyUtils.format(s.paid);
-  } catch { /* silencioso */ }
+async function loadAll() {
+  const [summary, expenses, goalData] = await Promise.all([
+    apiFetch('/financial/summary').catch(() => ({ paid: 0 })),
+    apiFetch('/financial/expenses').catch(() => []),
+    apiFetch('/financial/goal').catch(() => ({ monthly_goal: 0 })),
+  ]);
+
+  const paid = summary.paid || 0;
+  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
+  const goal = goalData.monthly_goal || 0;
+  const remaining = goal > 0 ? Math.max(goal - paid, 0) : null;
+
+  document.getElementById('f-paid').textContent = currencyUtils.format(paid);
+  document.getElementById('f-expenses').textContent = currencyUtils.format(totalExpenses);
+  document.getElementById('f-goal').textContent = goal ? currencyUtils.format(goal) : 'Não definida';
+
+  const remEl = document.getElementById('f-remaining');
+  if (remaining === null) {
+    remEl.textContent = '—';
+    remEl.className = 'stat-card__value';
+  } else if (remaining === 0) {
+    remEl.textContent = 'Meta atingida!';
+    remEl.className = 'stat-card__value stat-card__value--green';
+  } else {
+    remEl.textContent = currencyUtils.format(remaining);
+    remEl.className = 'stat-card__value stat-card__value--yellow';
+  }
+
+  renderExpenseCards(expenses);
+  loadPayments();
+}
+
+function renderExpenseCards(expenses) {
+  const grid = document.getElementById('expenses-grid');
+  if (!expenses.length) {
+    grid.innerHTML = `<p style="color:var(--color-text-muted);font-size:.85rem;grid-column:1/-1">Nenhuma despesa cadastrada. Clique em "+ Nova despesa" para adicionar.</p>`;
+    return;
+  }
+  grid.innerHTML = expenses.map(e => `
+    <div class="expense-card">
+      <div class="expense-card__header">
+        <span class="expense-card__name">${esc(e.name)}</span>
+        <div style="display:flex;gap:.3rem">
+          <button class="expense-card__btn" onclick="editExpense('${esc(e.id)}','${esc(e.name)}',${e.amount},'${esc(e.category)}')" title="Editar">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="expense-card__btn expense-card__btn--danger" onclick="deleteExpense('${esc(e.id)}')" title="Remover">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+      </div>
+      <p class="expense-card__value">${currencyUtils.format(e.amount)}</p>
+      <span class="badge badge--scheduled" style="font-size:.68rem">${esc(e.category)}</span>
+    </div>
+  `).join('');
 }
 
 async function loadPayments() {
   const tbody = document.getElementById('payments-body');
-  const status = document.getElementById('filter-payment-status').value;
-  const qs = status ? `?status=${status}` : '';
-
   try {
-    const payments = await apiFetch(`/financial/payments${qs}`);
-
+    const payments = await apiFetch('/financial/payments?status=paid');
     if (!payments.length) {
-      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Nenhum pagamento encontrado.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Nenhum pagamento recebido.</td></tr>`;
       return;
     }
-
-    const STATUS_PT = { paid: 'Pago', pending: 'Pendente', overdue: 'Vencido', cancelled: 'Cancelado' };
-
-    tbody.innerHTML = payments.map((p) => `
-      <tr>
+    tbody.innerHTML = payments.map(p => {
+      // Extrai forma de pagamento do campo notes se tiver prefixo [método]
+      let method = '—';
+      let notes = p.notes || '';
+      const match = notes.match(/^\[([^\]]+)\]/);
+      if (match) { method = match[1]; }
+      const METHOD_PT = { pix: 'PIX', dinheiro: 'Dinheiro', cartao: 'Cartão', plano_saude: 'Plano de saúde' };
+      return `<tr>
         <td>${esc(p.clients?.name) || '—'}</td>
         <td>${currencyUtils.format(p.amount)}</td>
         <td>${dateUtils.format(p.due_date + 'T00:00:00')}</td>
-      </tr>
-    `).join('');
+        <td>${METHOD_PT[method] || esc(method)}</td>
+      </tr>`;
+    }).join('');
   } catch {
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--color-error)">Erro ao carregar.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--color-error)">Erro ao carregar.</td></tr>`;
   }
 }
 
-async function openNewPaymentModal() {
-  const clients = await apiFetch('/clients/active');
-
-  const content = `
-    <div class="form-group">
-      <label class="form-label">Cliente</label>
-      <select id="pay-client" class="form-select">
-        <option value="">Selecione...</option>
-        ${(clients || []).map((c) => `<option value="${c.id}">${c.name}</option>`).join('')}
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Valor (R$)</label>
-      <input type="number" id="pay-amount" class="form-input" placeholder="0,00" min="0" step="0.01" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">Vencimento</label>
-      <input type="date" id="pay-due" class="form-input" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">Chave PIX (opcional)</label>
-      <input type="text" id="pay-pix" class="form-input" placeholder="CPF, e-mail ou telefone" />
-    </div>
-  `;
-
+function openAddExpenseModal() {
   Modal.open({
-    title: 'Novo pagamento',
-    content,
-    confirmLabel: 'Criar',
+    title: 'Nova despesa',
+    confirmLabel: 'Adicionar',
+    content: `
+      <div class="form-group"><label class="form-label">Nome *</label><input id="exp-name" class="form-input" placeholder="Ex: Aluguel, Internet, Luz..." /></div>
+      <div class="form-group">
+        <label class="form-label">Categoria</label>
+        <select id="exp-cat" class="form-select">
+          <option value="aluguel">Aluguel</option>
+          <option value="internet">Internet</option>
+          <option value="energia">Energia elétrica</option>
+          <option value="agua">Água</option>
+          <option value="telefone">Telefone</option>
+          <option value="software">Software/Assinatura</option>
+          <option value="outros">Outros</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Valor mensal (R$) *</label><input type="number" id="exp-amount" class="form-input" placeholder="0,00" min="0" step="0.01" /></div>
+    `,
     onConfirm: async () => {
-      const clientId = document.getElementById('pay-client').value;
-      const amount   = parseFloat(document.getElementById('pay-amount').value);
-      const dueDate  = document.getElementById('pay-due').value;
-      const pixKey   = document.getElementById('pay-pix').value;
-
-      if (!clientId || !amount || !dueDate) { notify.warning('Preencha todos os campos.'); return; }
-
+      const name = document.getElementById('exp-name').value.trim();
+      const amount = parseFloat(document.getElementById('exp-amount').value);
+      const category = document.getElementById('exp-cat').value;
+      if (!name || !amount) { notify.error('Preencha todos os campos.'); return; }
       try {
-        await apiFetch('/financial/payments', {
-          method: 'POST',
-          body: JSON.stringify({ client_id: clientId, amount, due_date: dueDate, pix_key: pixKey }),
-        });
-        notify.success('Pagamento criado.');
-        loadSummary();
-        loadPayments();
-      } catch {
-        notify.error('Erro ao criar pagamento.');
-      }
+        await apiFetch('/financial/expenses', { method: 'POST', body: JSON.stringify({ name, amount, category }) });
+        notify.success('Despesa adicionada!');
+        loadAll();
+      } catch { notify.error('Erro ao adicionar.'); }
     },
   });
 }
+
+function openSetGoalModal() {
+  Modal.open({
+    title: 'Definir meta mensal',
+    confirmLabel: 'Salvar',
+    content: `
+      <div class="form-group">
+        <label class="form-label">Meta de faturamento mensal (R$)</label>
+        <input type="number" id="goal-input" class="form-input" placeholder="Ex: 5000" min="0" step="100" />
+        <p style="font-size:.8rem;color:var(--color-text-muted);margin-top:.3rem">Quanto você quer receber este mês?</p>
+      </div>`,
+    onConfirm: async () => {
+      const val = parseFloat(document.getElementById('goal-input').value);
+      if (!val || val <= 0) { notify.error('Informe um valor válido.'); return; }
+      try {
+        await apiFetch('/financial/goal', { method: 'PUT', body: JSON.stringify({ monthly_goal: val }) });
+        notify.success('Meta salva!');
+        loadAll();
+      } catch { notify.error('Erro ao salvar meta.'); }
+    },
+  });
+}
+
+window.deleteExpense = async (id) => {
+  if (!confirm('Remover esta despesa?')) return;
+  try {
+    await apiFetch(`/financial/expenses/${id}`, { method: 'DELETE' });
+    notify.success('Despesa removida.');
+    loadAll();
+  } catch { notify.error('Erro ao remover.'); }
+};
+
+window.editExpense = (id, name, amount, category) => {
+  Modal.open({
+    title: 'Editar despesa',
+    confirmLabel: 'Salvar',
+    content: `
+      <div class="form-group"><label class="form-label">Nome *</label><input id="exp-edit-name" class="form-input" value="${esc(name)}" /></div>
+      <div class="form-group">
+        <label class="form-label">Categoria</label>
+        <select id="exp-edit-cat" class="form-select">
+          <option value="aluguel" ${category==='aluguel'?'selected':''}>Aluguel</option>
+          <option value="internet" ${category==='internet'?'selected':''}>Internet</option>
+          <option value="energia" ${category==='energia'?'selected':''}>Energia elétrica</option>
+          <option value="agua" ${category==='agua'?'selected':''}>Água</option>
+          <option value="telefone" ${category==='telefone'?'selected':''}>Telefone</option>
+          <option value="software" ${category==='software'?'selected':''}>Software/Assinatura</option>
+          <option value="outros" ${category==='outros'?'selected':''}>Outros</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Valor (R$) *</label><input type="number" id="exp-edit-amount" class="form-input" value="${amount}" min="0" step="0.01" /></div>
+    `,
+    onConfirm: async () => {
+      const newName = document.getElementById('exp-edit-name').value.trim();
+      const newAmount = parseFloat(document.getElementById('exp-edit-amount').value);
+      const newCat = document.getElementById('exp-edit-cat').value;
+      if (!newName || !newAmount) { notify.error('Preencha todos os campos.'); return; }
+      try {
+        // Deleta e recria (API não tem PATCH para expenses)
+        await apiFetch(`/financial/expenses/${id}`, { method: 'DELETE' });
+        await apiFetch('/financial/expenses', { method: 'POST', body: JSON.stringify({ name: newName, amount: newAmount, category: newCat }) });
+        notify.success('Despesa atualizada!');
+        loadAll();
+      } catch { notify.error('Erro ao atualizar.'); }
+    },
+  });
+};
 
 init();
