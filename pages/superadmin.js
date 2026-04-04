@@ -238,7 +238,7 @@ $('saChangePassBtn').addEventListener('click', () => {
 });
 
 // ── Navegação ─────────────────────────────────────────────────
-const pages = { overview: 'pageOverview', professionals: 'pageProfessionals', superadmins: 'pageSuperadmins', financial: 'pageFinancial' };
+const pages = { overview: 'pageOverview', professionals: 'pageProfessionals', superadmins: 'pageSuperadmins', financial: 'pageFinancial', audit: 'pageAudit' };
 
 document.querySelectorAll('.sa-nav-item').forEach(item => {
   item.addEventListener('click', () => {
@@ -251,6 +251,7 @@ document.querySelectorAll('.sa-nav-item').forEach(item => {
     if (page === 'superadmins') loadSuperadmins();
     if (page === 'overview') loadOverview();
     if (page === 'financial') loadFinancial();
+    if (page === 'audit') loadAuditLogs();
   });
 });
 
@@ -495,4 +496,51 @@ $('saCreateSaBtn').addEventListener('click', async () => {
   $('saNewSaModal').style.display = 'none';
   $('saNewName').value = ''; $('saNewEmail').value = '';
   loadSuperadmins();
+});
+
+// ── Auditoria LGPD ────────────────────────────────────────────
+const ACTION_LABELS = {
+  LOGIN: '🔐 Login',
+  LOGOUT: '🚪 Logout',
+  COMPLETE_APPOINTMENT: '✅ Sessão concluída',
+  VIEW_CLIENTS: '👁 Visualizou clientes',
+  DELETE_CLIENT: '🗑 Removeu cliente',
+  DELETE_LEAD: '🗑 Removeu lead',
+};
+
+async function loadAuditLogs() {
+  const el = $('saAuditList');
+  el.innerHTML = '<p class="sa-loading">Carregando...</p>';
+  const action = $('auditFilterAction')?.value.trim() || '';
+  const qs = action ? `?action=${encodeURIComponent(action)}&limit=200` : '?limit=200';
+  const { ok, data } = await api(`/audit-logs${qs}`);
+  if (!ok) { el.innerHTML = `<p class="sa-error">${data.error || 'Erro ao carregar.'}</p>`; return; }
+  if (!data.length) { el.innerHTML = '<p class="sa-empty">Nenhum registro de auditoria encontrado.</p>'; return; }
+
+  el.innerHTML = `<table class="sa-table">
+    <thead><tr>
+      <th>Data/Hora</th>
+      <th>Profissional</th>
+      <th>Usuário</th>
+      <th>Ação</th>
+      <th>Recurso</th>
+      <th>IP</th>
+    </tr></thead>
+    <tbody>${data.map(l => `<tr>
+      <td style="white-space:nowrap;font-size:.78rem">${new Date(l.created_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</td>
+      <td>${esc(l.professionals?.name || '—')}</td>
+      <td style="font-size:.78rem">${esc(l.actor_email || '—')}</td>
+      <td><span style="font-size:.78rem">${ACTION_LABELS[l.action] || esc(l.action)}</span></td>
+      <td style="font-size:.75rem;color:rgba(255,255,255,.55)">${esc(l.resource || '—')}${l.resource_id ? ` <span style="opacity:.4">#${esc(l.resource_id.slice(0,8))}</span>` : ''}</td>
+      <td style="font-size:.75rem;color:rgba(255,255,255,.55)">${esc(l.ip_address || '—')}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+// Filtro de auditoria
+document.addEventListener('click', (e) => {
+  if (e.target?.id === 'auditFilterBtn') loadAuditLogs();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && document.activeElement?.id === 'auditFilterAction') loadAuditLogs();
 });
