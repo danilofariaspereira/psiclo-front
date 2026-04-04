@@ -133,7 +133,7 @@ window.openClientHistory = async (id, name) => {
 
     const STATUS_PT = { scheduled: 'Agendado', confirmed: 'Confirmado', completed: 'Concluído', cancelled: 'Cancelado', no_show: 'Não compareceu' };
 
-    const rows = appts.map(a => `
+    const rows = appts.map((a, i) => `
       <div class="history-item">
         <div class="history-item__header">
           <span class="history-item__date">
@@ -142,7 +142,7 @@ window.openClientHistory = async (id, name) => {
           <span class="badge badge--${a.status === 'completed' ? 'converted' : a.status === 'cancelled' ? 'lost' : 'scheduled'}">${STATUS_PT[a.status] || a.status}</span>
         </div>
         ${a.notes ? `
-          <button class="btn btn--ghost btn--sm history-item__obs-btn" onclick="viewHistoryNote(${JSON.stringify(esc(a.notes))})">
+          <button class="btn btn--ghost btn--sm history-item__obs-btn" data-note-idx="${i}">
             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             Ver observação
           </button>
@@ -150,8 +150,15 @@ window.openClientHistory = async (id, name) => {
       </div>
     `).join('');
 
-    document.querySelector('#psiclo-modal .modal__body').innerHTML = `<div style="display:flex;flex-direction:column;gap:.75rem">${rows}</div>`;
+    const body = document.querySelector('#psiclo-modal .modal__body');
+    body.innerHTML = `<div style="display:flex;flex-direction:column;gap:.75rem">${rows}</div>`;
     document.querySelector('#psiclo-modal .modal__footer').style.display = 'none';
+
+    // Vincula os botões de observação usando índice — evita problemas com escaping inline
+    body.querySelectorAll('.history-item__obs-btn').forEach(btn => {
+      const idx = parseInt(btn.dataset.noteIdx);
+      btn.addEventListener('click', () => viewHistoryNote(appts[idx].notes));
+    });
   } catch {
     document.querySelector('#psiclo-modal .modal__body').innerHTML = '<p style="color:var(--color-error)">Erro ao carregar histórico.</p>';
   }
