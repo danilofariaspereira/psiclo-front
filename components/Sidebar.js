@@ -113,6 +113,9 @@ export function renderSidebar(activePage) {
     setNotifPref(e.target.checked);
   });
 
+  // Polling global de agendamentos — funciona em qualquer página
+  startGlobalPolling();
+
   // Atualiza nome/avatar na sidebar quando o store for populado
   store.subscribe('professional', (prof) => {
     if (!prof) return;
@@ -127,6 +130,69 @@ export function renderSidebar(activePage) {
       }
     }
   });
+}
+
+let _globalPollingTimer = null;
+
+function startGlobalPolling() {
+  if (_globalPollingTimer) return; // já rodando
+
+  const API = 'https://psiclo-back.vercel.app/api';
+  let lastCount = 0;
+  let initialized = false;
+
+  async function check() {
+    try {
+      const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        .split('/').reverse().join('-');
+      const res = await fetch(`${API}/schedule/appointments?date=${today}`, { credentials: 'include' });
+      if (!res.ok) return;
+      const appts = await res.json();
+      const count = appts?.length ?? 0;
+
+      if (initialized && count > lastCount && getNotifPref()) {
+        const newest = appts[appts.length - 1];
+        const clientName = newest?.clients?.name || '';
+        const time = newest?.scheduled_at
+          ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+          : '';
+        showGlobalToast(`📅 Novo agendamento — ${clientName}`, time ? `Hoje às ${time}` : '');
+      }
+      lastCount = count;
+      initialized = true;
+    } catch (_) {}
+  }
+
+  check();
+  _globalPollingTimer = setInterval(check, 30000);
+}
+
+function showGlobalToast(title, subtitle = '') {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+  } catch (_) {}
+
+  const el = document.createElement('div');
+  el.className = 'appt-toast';
+  el.innerHTML = `
+    <div class="appt-toast__icon">📅</div>
+    <div class="appt-toast__body">
+      <div class="appt-toast__title">${title}</div>
+      ${subtitle ? `<div class="appt-toast__sub">${subtitle}</div>` : ''}
+    </div>
+    <button class="appt-toast__close" aria-label="Fechar">×</button>
+  `;
+  el.querySelector('.appt-toast__close').addEventListener('click', () => el.remove());
+  document.body.appendChild(el);
+  setTimeout(() => { el.classList.add('appt-toast--hide'); setTimeout(() => el.remove(), 400); }, 8000);
 }
 
 function showChangePasswordModal() {
