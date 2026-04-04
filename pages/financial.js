@@ -39,9 +39,7 @@ async function init() {
 async function loadSummary() {
   try {
     const s = await apiFetch('/financial/summary');
-    document.getElementById('f-paid').textContent    = currencyUtils.format(s.paid);
-    document.getElementById('f-pending').textContent = currencyUtils.format(s.pending);
-    document.getElementById('f-overdue').textContent = currencyUtils.format(s.overdue);
+    document.getElementById('f-paid').textContent = currencyUtils.format(s.paid);
   } catch { /* silencioso */ }
 }
 
@@ -54,27 +52,21 @@ async function loadPayments() {
     const payments = await apiFetch(`/financial/payments${qs}`);
 
     if (!payments.length) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Nenhum pagamento encontrado.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Nenhum pagamento encontrado.</td></tr>`;
       return;
     }
+
+    const STATUS_PT = { paid: 'Pago', pending: 'Pendente', overdue: 'Vencido', cancelled: 'Cancelado' };
 
     tbody.innerHTML = payments.map((p) => `
       <tr>
         <td>${esc(p.clients?.name) || '—'}</td>
         <td>${currencyUtils.format(p.amount)}</td>
         <td>${dateUtils.format(p.due_date + 'T00:00:00')}</td>
-        <td><span class="badge badge--${p.status}">${p.status}</span></td>
-        <td>
-          ${p.status !== 'paid' ? `
-            <button class="btn btn--primary btn--sm" onclick="markPaid('${esc(p.id)}')">
-              ✓ Pago
-            </button>
-          ` : '—'}
-        </td>
       </tr>
     `).join('');
   } catch {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--color-error)">Erro ao carregar.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--color-error)">Erro ao carregar.</td></tr>`;
   }
 }
 

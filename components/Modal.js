@@ -36,9 +36,12 @@ export const Modal = {
 
   open({ title, content, onConfirm, confirmLabel = 'Confirmar', hideFooter = false }) {
     this.init();
+    // title é sempre texto puro — nunca HTML
     this._el.querySelector('.modal__title').textContent = title;
     this._el.querySelector('.modal__body').innerHTML = '';
 
+    // content é HTML de formulário (código nosso, não dado do usuário).
+    // Dados do servidor inseridos em content DEVEM ser escapados com esc() antes de passar aqui.
     if (typeof content === 'string') {
       this._el.querySelector('.modal__body').innerHTML = content;
     } else {

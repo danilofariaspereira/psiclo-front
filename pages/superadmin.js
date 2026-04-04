@@ -55,6 +55,12 @@ window.togglePass = (inputId, btn) => {
   btn.querySelector('.eye-closed').style.display = isPass ? 'block' : 'none';
 };
 
+// Função de escape para prevenir XSS em templates HTML
+function esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
+}
+
 // ── Login ─────────────────────────────────────────────────────
 $('saLoginBtn').addEventListener('click', doLogin);
 $('saPassword').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
@@ -306,14 +312,14 @@ async function loadProfessionals() {
   el.innerHTML = `<table class="sa-table">
     <thead><tr><th>Nome</th><th>E-mail</th><th>CRP</th><th>CPF</th><th>Plano</th><th>Status</th><th style="text-align:center">Ações</th></tr></thead>
     <tbody>${data.map(p => `<tr>
-      <td>${p.name}</td><td>${p.email}</td><td>${p.crp || '—'}</td><td>${p.cpf || '—'}</td>
-      <td><span class="sa-badge sa-badge--${p.plan}">${p.plan}</span></td>
+      <td>${esc(p.name)}</td><td>${esc(p.email)}</td><td>${esc(p.crp) || '—'}</td><td>${esc(p.cpf) || '—'}</td>
+      <td><span class="sa-badge sa-badge--${esc(p.plan)}">${esc(p.plan)}</span></td>
       <td><span class="sa-badge ${p.active ? 'sa-badge--active' : 'sa-badge--inactive'}">${p.active ? 'Ativo' : 'Inativo'}</span></td>
       <td style="text-align:center">
-        <button class="sa-btn-sm" onclick="editProf('${p.id}','${p.name}','${p.email}')">Editar</button>
-        <button class="sa-btn-sm" onclick="toggleProf('${p.id}',${p.active})">${p.active ? 'Desativar' : 'Ativar'}</button>
-        <button class="sa-btn-sm sa-btn-warning" onclick="resetProfPass('${p.id}','${p.name}')">Resetar senha</button>
-        <button class="sa-btn-sm sa-btn-danger" onclick="deleteProf('${p.id}','${p.name}')">Excluir</button>
+        <button class="sa-btn-sm" onclick="editProf('${esc(p.id)}','${esc(p.name)}','${esc(p.email)}')">Editar</button>
+        <button class="sa-btn-sm" onclick="toggleProf('${esc(p.id)}',${p.active})">${p.active ? 'Desativar' : 'Ativar'}</button>
+        <button class="sa-btn-sm sa-btn-warning" onclick="resetProfPass('${esc(p.id)}','${esc(p.name)}')">Resetar senha</button>
+        <button class="sa-btn-sm sa-btn-danger" onclick="deleteProf('${esc(p.id)}','${esc(p.name)}')">Excluir</button>
       </td>
     </tr>`).join('')}</tbody></table>`;
 }
@@ -328,10 +334,10 @@ async function loadDeletedProfessionals() {
   el.innerHTML = `<table class="sa-table">
     <thead><tr><th>Nome</th><th>E-mail</th><th>CRP</th><th>CPF</th><th>Plano</th><th>Excluído em</th><th style="text-align:center">Ações</th></tr></thead>
     <tbody>${data.map(p => `<tr>
-      <td>${p.name}</td><td>${p.email}</td><td>${p.crp || '—'}</td><td>${p.cpf || '—'}</td>
-      <td><span class="sa-badge sa-badge--${p.plan}">${p.plan}</span></td>
+      <td>${esc(p.name)}</td><td>${esc(p.email)}</td><td>${esc(p.crp) || '—'}</td><td>${esc(p.cpf) || '—'}</td>
+      <td><span class="sa-badge sa-badge--${esc(p.plan)}">${esc(p.plan)}</span></td>
       <td>${new Date(p.deleted_at).toLocaleDateString('pt-BR')}</td>
-      <td style="text-align:center"><button class="sa-btn-sm sa-btn-success" onclick="restoreProf('${p.id}','${p.name}')">Restaurar</button></td>
+      <td style="text-align:center"><button class="sa-btn-sm sa-btn-success" onclick="restoreProf('${esc(p.id)}','${esc(p.name)}')">Restaurar</button></td>
     </tr>`).join('')}</tbody></table>`;
 }
 
@@ -461,10 +467,10 @@ async function loadSuperadmins() {
   el.innerHTML = `<table class="sa-table">
     <thead><tr><th>Nome</th><th>E-mail</th><th>Status</th><th>Criado em</th><th style="text-align:center">Ações</th></tr></thead>
     <tbody>${data.map(s => `<tr>
-      <td>${s.name}</td><td>${s.email}</td>
+      <td>${esc(s.name)}</td><td>${esc(s.email)}</td>
       <td><span class="sa-badge ${s.active ? 'sa-badge--active' : 'sa-badge--inactive'}">${s.active ? 'Ativo' : 'Inativo'}</span></td>
       <td>${new Date(s.created_at).toLocaleDateString('pt-BR')}</td>
-      <td style="text-align:center"><button class="sa-btn-sm sa-btn-warning" onclick="resetSaPass('${s.id}','${s.name}')">Resetar senha</button></td>
+      <td style="text-align:center"><button class="sa-btn-sm sa-btn-warning" onclick="resetSaPass('${esc(s.id)}','${esc(s.name)}')">Resetar senha</button></td>
     </tr>`).join('')}</tbody></table>`;
 }
 

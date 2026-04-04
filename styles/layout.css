@@ -132,7 +132,7 @@
   border: none;
   cursor: pointer;
   transition: background var(--transition), color var(--transition);
-  border-top: 1px solid var(--dash-sidebar-border);
+  border-top: 2px solid #0288d1;
 }
 .sidebar__footer-btn:first-child { border-right: 1px solid var(--dash-sidebar-border); }
 .sidebar__footer-btn:hover { background: #1a237e; color: #fff; }
@@ -282,3 +282,142 @@
 .appt-card__modality { font-size: .8rem; color: var(--color-text-muted); }
 .appt-card__status { display: inline-block; font-size: .72rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
 .appt-card__actions { display: flex; gap: var(--space-xs); margin-top: var(--space-xs); }
+
+/* ── Cards de cliente ── */
+.client-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition);
+}
+.client-card:hover { box-shadow: var(--shadow-md); }
+
+.client-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.client-card__avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a237e, #0288d1);
+  color: #fff;
+  font-weight: 700;
+  font-size: .85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.client-card__name {
+  font-weight: 700;
+  font-size: .95rem;
+  color: var(--color-text);
+}
+.client-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: .8rem;
+  color: var(--color-text-muted);
+}
+.client-card__actions {
+  display: flex;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+/* ── Histórico de atendimentos ── */
+.history-item {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+}
+.history-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: .35rem;
+}
+.history-item__date {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.history-item__obs-btn {
+  font-size: .75rem;
+  margin-top: .25rem;
+}
+.history-item__obs {
+  margin-top: .4rem;
+  font-size: .82rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+  background: rgba(2,136,209,0.06);
+  border-left: 3px solid #0288d1;
+  padding: .4rem .6rem;
+  border-radius: 0 4px 4px 0;
+  white-space: pre-wrap;
+}
+
+/* ── Toast de notificação de agendamento ── */
+@keyframes toastIn {
+  from { transform: translateY(100px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes toastOut {
+  from { transform: translateY(0);     opacity: 1; }
+  to   { transform: translateY(100px); opacity: 0; }
+}
+
+.appt-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  background: #16a34a;
+  color: #fff;
+  padding: .75rem 1rem .75rem .9rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(22,163,74,.35);
+  z-index: 9999;
+  min-width: 240px;
+  max-width: 320px;
+  animation: toastIn .35s cubic-bezier(.22,1,.36,1) forwards;
+}
+.appt-toast--hide { animation: toastOut .35s ease forwards; }
+
+.appt-toast__icon { font-size: 1.3rem; flex-shrink: 0; }
+.appt-toast__body { flex: 1; min-width: 0; }
+.appt-toast__title {
+  font-size: .88rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.appt-toast__sub {
+  font-size: .78rem;
+  opacity: .85;
+  margin-top: 1px;
+}
+.appt-toast__close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  opacity: .7;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+.appt-toast__close:hover { opacity: 1; }

@@ -45,7 +45,7 @@ export function renderSidebar(activePage) {
       <div class="sidebar__profile" id="sidebar-profile" title="Clique para trocar foto">
         <div class="sidebar__avatar" id="sidebar-avatar">${avatarContent}</div>
         <div class="sidebar__profile-info">
-          <div class="sidebar__profile-name">${prof?.name || '—'}</div>
+          <div class="sidebar__profile-name" id="sidebar-profile-name">${prof?.name || '—'}</div>
           <div class="sidebar__profile-role">Psicólogo(a)</div>
         </div>
       </div>
@@ -92,6 +92,21 @@ export function renderSidebar(activePage) {
 
   document.getElementById('logout-btn').addEventListener('click', () => authService.logout());
   document.getElementById('change-pass-btn').addEventListener('click', showChangePasswordModal);
+
+  // Atualiza nome/avatar na sidebar quando o store for populado
+  store.subscribe('professional', (prof) => {
+    if (!prof) return;
+    const nameEl = document.getElementById('sidebar-profile-name');
+    const avatarEl = document.getElementById('sidebar-avatar');
+    if (nameEl) nameEl.textContent = prof.name || '—';
+    if (avatarEl) {
+      if (prof.avatar_url) {
+        avatarEl.innerHTML = `<img src="${prof.avatar_url}" alt="foto" />`;
+      } else {
+        avatarEl.textContent = prof.name ? prof.name.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase() : '?';
+      }
+    }
+  });
 }
 
 function showChangePasswordModal() {

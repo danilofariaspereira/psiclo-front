@@ -10,6 +10,8 @@ import { esc } from '../utils/sanitize.js';
 
 const API = 'https://psiclo-back.vercel.app/api';
 let scheduleConfig = null;
+let lastApptCount = 0;
+let schedulePolling = null;
 
 async function apiFetch(path, options = {}) {
   const res = await fetch(`${API}${path}`, {
@@ -52,6 +54,37 @@ async function init() {
 
   document.getElementById('btn-new-appt').addEventListener('click', openNewApptModal);
   document.getElementById('btn-config').addEventListener('click', openConfigModal);
+
+  // Polling para notificar novos agendamentos vindos da landing page
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const initial = await apiFetch(`/schedule/appointments?date=${today}`).catch(() => []);
+    lastApptCount = initial?.length ?? 0;
+  } catch (_) {}
+
+  schedulePolling = setInterval(async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const appts = await apiFetch(`/schedule/appointments?date=${today}`);
+      const count = appts?.length ?? 0;
+      if (count > lastApptCount && lastApptCount > 0) {
+        const newest = appts[appts.length - 1];
+        const clientName = newest?.clients?.name || '';
+        const time = newest?.scheduled_at
+          ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          : '';
+        showApptToast(`Novo agendamento — ${clientName}`, time ? `Horário: ${time}` : '');
+        // Recarrega o dia atual se estiver visualizando hoje
+        const blockBtn = document.getElementById('btn-block-day');
+        if (blockBtn.dataset.date === today) loadDay(new Date(today + 'T12:00:00'));
+      }
+      lastApptCount = count;
+    } catch (_) {}
+  }, 30000);
+
+  window.addEventListener('beforeunload', () => {
+    if (schedulePolling) clearInterval(schedulePolling);
+  });
 
   // Botão bloquear dia — aparece quando uma data está selecionada
   document.getElementById('btn-block-day').addEventListener('click', async () => {
@@ -121,6 +154,37 @@ async function openConfigModal() {
       } catch { notify('Erro ao salvar.', 'error'); }
     },
   });
+}
+
+function showApptToast(title, subtitle = '') {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+  } catch (_) {}
+
+  const el = document.createElement('div');
+  el.className = 'appt-toast';
+  el.innerHTML = `
+    <div class="appt-toast__icon">📅</div>
+    <div class="appt-toast__body">
+      <div class="appt-toast__title">${esc(title)}</div>
+      ${subtitle ? `<div class="appt-toast__sub">${esc(subtitle)}</div>` : ''}
+    </div>
+    <button class="appt-toast__close" aria-label="Fechar">×</button>
+  `;
+  el.querySelector('.appt-toast__close').addEventListener('click', () => el.remove());
+  document.body.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('appt-toast--hide');
+    setTimeout(() => el.remove(), 400);
+  }, 6000);
 }
 
 async function loadDay(date) {

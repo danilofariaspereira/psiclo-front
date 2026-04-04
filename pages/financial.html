@@ -24,28 +24,19 @@
       </div>
 
       <!-- Resumo -->
-      <div class="stats-grid" id="financial-stats">
+      <div class="stats-grid" id="financial-stats" style="grid-template-columns:1fr">
         <div class="stat-card">
-          <p class="stat-card__label">Recebido</p>
+          <p class="stat-card__label">Recebido no mês</p>
           <p class="stat-card__value stat-card__value--green" id="f-paid">—</p>
-        </div>
-        <div class="stat-card">
-          <p class="stat-card__label">Pendente</p>
-          <p class="stat-card__value stat-card__value--yellow" id="f-pending">—</p>
-        </div>
-        <div class="stat-card">
-          <p class="stat-card__label">Vencido</p>
-          <p class="stat-card__value stat-card__value--red" id="f-overdue">—</p>
         </div>
       </div>
 
-      <!-- Filtro -->
-      <div style="margin-bottom:1rem;display:flex;gap:.5rem">
+      <!-- Filtro por mês -->
+      <div style="margin-bottom:1rem;display:flex;gap:.5rem;align-items:center">
+        <label style="font-size:.85rem;color:var(--color-text-muted);font-weight:600">Filtrar:</label>
         <select id="filter-payment-status" class="form-select" style="width:auto">
           <option value="">Todos</option>
-          <option value="pending">Pendente</option>
-          <option value="paid">Pago</option>
-          <option value="overdue">Vencido</option>
+          <option value="paid">Pagos</option>
         </select>
       </div>
 
@@ -56,13 +47,11 @@
               <tr>
                 <th>Cliente</th>
                 <th>Valor</th>
-                <th>Vencimento</th>
-                <th>Status</th>
-                <th>Ações</th>
+                <th>Data</th>
               </tr>
             </thead>
             <tbody id="payments-body">
-              <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Carregando...</td></tr>
+              <tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Carregando...</td></tr>
             </tbody>
           </table>
         </div>

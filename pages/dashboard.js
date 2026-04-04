@@ -19,7 +19,7 @@ async function apiFetch(path) {
 
 function playNotificationSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = new AudioContext();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -33,13 +33,24 @@ function playNotificationSound() {
   } catch (_) {}
 }
 
-function showNotification(msg) {
+function showNotification(title, subtitle = '') {
   playNotificationSound();
   const el = document.createElement('div');
-  el.style.cssText = 'position:fixed;top:1rem;right:1rem;background:linear-gradient(135deg,#1a237e,#0288d1);color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:.88rem;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);animation:slideIn .3s ease';
-  el.textContent = msg;
+  el.className = 'appt-toast';
+  el.innerHTML = `
+    <div class="appt-toast__icon">📅</div>
+    <div class="appt-toast__body">
+      <div class="appt-toast__title">${esc(title)}</div>
+      ${subtitle ? `<div class="appt-toast__sub">${esc(subtitle)}</div>` : ''}
+    </div>
+    <button class="appt-toast__close" aria-label="Fechar">×</button>
+  `;
+  el.querySelector('.appt-toast__close').addEventListener('click', () => el.remove());
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 4000);
+  setTimeout(() => {
+    el.classList.add('appt-toast--hide');
+    setTimeout(() => el.remove(), 400);
+  }, 6000);
 }
 
 async function init() {
@@ -60,22 +71,34 @@ async function init() {
 function startPolling() {
   pollingInterval = setInterval(async () => {
     try {
-      const [leads, today] = await Promise.all([
+      const today = new Date().toISOString().split('T')[0];
+      const [leads, todayAppts] = await Promise.all([
         apiFetch('/leads?status=new'),
-        apiFetch(`/schedule/appointments?date=${new Date().toISOString().split('T')[0]}`),
+        apiFetch(`/schedule/appointments?date=${today}`),
       ]);
       const newLeadCount = leads?.length ?? 0;
-      const newApptCount = today?.length ?? 0;
+      const newApptCount = todayAppts?.length ?? 0;
 
       if (newLeadCount > lastLeadCount && lastLeadCount > 0) {
-        showNotification('Novo lead recebido!');
+        showNotification('Novo lead recebido!', leads[0]?.name || '');
         loadStats();
       }
+
       if (newApptCount > lastApptCount && lastApptCount > 0) {
-        showNotification('Novo agendamento!');
+        // Encontra o(s) agendamento(s) novo(s) — os que não estavam antes
+        const newest = todayAppts[todayAppts.length - 1];
+        const clientName = newest?.clients?.name || '';
+        const time = newest?.scheduled_at
+          ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          : '';
+        showNotification(
+          `Novo agendamento — ${clientName}`,
+          time ? `Horário: ${time}` : ''
+        );
         loadUpcoming();
         loadStats();
       }
+
       lastLeadCount = newLeadCount;
       lastApptCount = newApptCount;
     } catch (_) {}
@@ -129,9 +152,5 @@ async function loadUpcoming() {
     tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--color-error)">Erro ao carregar.</td></tr>`;
   }
 }
-
-const style = document.createElement('style');
-style.textContent = `@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`;
-document.head.appendChild(style);
 
 init();
