@@ -266,8 +266,12 @@ function renderAppts(appts, dateStr) {
         <span class="appt-card__status" style="background:${STATUS_COLOR[a.status]}22;color:${STATUS_COLOR[a.status]}">${STATUS_PT[a.status] || esc(a.status)}</span>
       </div>
       <div class="appt-card__client">${esc(a.clients?.name) || '—'}</div>
-      <div class="appt-card__modality">${a.modality === 'online' ? '🌐 Online' : '🏢 Presencial'}</div>
-      ${a.notes ? `<div style="font-size:.8rem;color:var(--color-text-muted);font-style:italic">${esc(a.notes)}</div>` : ''}
+      <div class="appt-card__modality">${a.modality === 'online' ? '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Online' : '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Presencial'}</div>
+      ${a.notes ? `
+        <button class="btn btn--ghost btn--sm" style="font-size:.72rem;padding:3px 8px;margin-top:2px" onclick="viewApptNotes('${esc(a.id)}','${esc(a.clients?.name ?? '')}',\`${esc(a.notes)}\`)">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Ver observação
+        </button>` : `<span style="font-size:.72rem;color:var(--color-text-muted);font-style:italic">Sem observação.</span>`}
       <div class="appt-card__actions">
         ${a.status !== 'completed' && a.status !== 'cancelled' ? `
           <button class="btn btn--primary btn--sm" onclick="openCompleteModal('${esc(a.id)}','${esc(a.clients?.name ?? '')}')">Concluir</button>
@@ -331,6 +335,14 @@ async function openNewApptModal() {
     },
   });
 }
+
+window.viewApptNotes = (id, clientName, notes) => {
+  Modal.open({
+    title: `Observação — ${clientName}`,
+    content: `<p style="white-space:pre-wrap;line-height:1.6">${esc(notes)}</p>`,
+    hideFooter: true,
+  });
+};
 
 window.updateApptStatus = async (id, status) => {
   try {

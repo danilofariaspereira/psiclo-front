@@ -142,8 +142,10 @@ window.openClientHistory = async (id, name) => {
           <span class="badge badge--${a.status === 'completed' ? 'converted' : a.status === 'cancelled' ? 'lost' : 'scheduled'}">${STATUS_PT[a.status] || a.status}</span>
         </div>
         ${a.notes ? `
-          <button class="btn btn--ghost btn--sm history-item__obs-btn" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent==='▼ Ver observação'?'▲ Ocultar':'▼ Ver observação'">▼ Ver observação</button>
-          <div class="history-item__obs" style="display:none">${esc(a.notes)}</div>
+          <button class="btn btn--ghost btn--sm history-item__obs-btn" onclick="viewHistoryNote(${JSON.stringify(esc(a.notes))})">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Ver observação
+          </button>
         ` : '<span style="font-size:.78rem;color:var(--color-text-muted);font-style:italic">Sem observação registrada.</span>'}
       </div>
     `).join('');
@@ -153,6 +155,14 @@ window.openClientHistory = async (id, name) => {
   } catch {
     document.querySelector('#psiclo-modal .modal__body').innerHTML = '<p style="color:var(--color-error)">Erro ao carregar histórico.</p>';
   }
+};
+
+window.viewHistoryNote = (notes) => {
+  Modal.open({
+    title: 'Observação da sessão',
+    content: `<p style="white-space:pre-wrap;line-height:1.6">${notes}</p>`,
+    hideFooter: true,
+  });
 };
 
 window.editClient = async (id) => {

@@ -65,7 +65,7 @@ async function loadLeads() {
           <td style="display:flex;gap:.4rem;align-items:center">
             ${waHref ? `<a href="${waHref}" target="_blank" rel="noopener noreferrer" class="btn btn--primary btn--sm" style="display:inline-flex;align-items:center;gap:.3rem">${WA_SVG} WhatsApp</a>` : ''}
             ${l.status !== 'converted'
-              ? `<button class="btn btn--ghost btn--sm" onclick="markConverted('${esc(l.id)}')">Convertido</button>`
+              ? `<span class="badge badge--pending">Pendente</span>`
               : `<span class="badge badge--converted">Convertido</span>`}
             <button class="btn btn--danger btn--sm" onclick="deleteLead('${esc(l.id)}')">Excluir</button>
           </td>
