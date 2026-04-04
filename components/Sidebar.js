@@ -108,9 +108,11 @@ export function renderSidebar(activePage) {
   document.getElementById('logout-btn').addEventListener('click', () => authService.logout());
   document.getElementById('change-pass-btn').addEventListener('click', showChangePasswordModal);
 
-  // Toggle de notificações
+  // Toggle de notificações — inicializa AudioContext na interação do usuário
   document.getElementById('notif-toggle').addEventListener('change', (e) => {
     setNotifPref(e.target.checked);
+    // Inicializa AudioContext aqui para garantir que o browser libera o áudio
+    if (e.target.checked) getAudioCtx();
   });
 
   // Polling global de agendamentos — funciona em qualquer página
@@ -135,45 +137,54 @@ export function renderSidebar(activePage) {
 let _globalPollingTimer = null;
 
 function startGlobalPolling() {
-  if (_globalPollingTimer) return; // já rodando
+  if (_globalPollingTimer) return;
 
   const API = 'https://psiclo-back.vercel.app/api';
-  let lastCount = 0;
-  let initialized = false;
+  // Começa com 60s atrás para pegar eventos recentes ao abrir
+  let lastEventAt = new Date(Date.now() - 60000).toISOString();
 
   async function check() {
     try {
-      const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-        .split('/').reverse().join('-');
-      const ts = Date.now(); // evita cache 304
-      const res = await fetch(`${API}/schedule/appointments?date=${today}&_=${ts}`, {
+      // POST nunca é cacheado por CDN/proxy — solução definitiva para o 304
+      const res = await fetch(`${API}/notifications/check`, {
+        method: 'POST',
         credentials: 'include',
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ since: lastEventAt }),
       });
-      if (!res.ok) return;
-      const appts = await res.json();
-      const count = appts?.length ?? 0;
 
-      if (initialized && count > lastCount && getNotifPref()) {
-        const newest = appts[appts.length - 1];
-        const clientName = escHtml(newest?.clients?.name || '');
-        const time = newest?.scheduled_at
-          ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+      if (!res.ok) return;
+      const { appointments, leads, serverTime } = await res.json();
+
+      // Atualiza o timestamp para o próximo check
+      lastEventAt = serverTime;
+
+      if (!getNotifPref()) return;
+
+      // Novo agendamento
+      if (appointments?.length > 0) {
+        const a = appointments[0];
+        const clientName = escHtml(a.clients?.name || '');
+        const time = a.scheduled_at
+          ? new Date(a.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
           : '';
-        showGlobalToast(`📅 Novo agendamento — ${clientName}`, time ? `Hoje às ${escHtml(time)}` : '');
-      } else if (initialized && count > lastCount && !getNotifPref()) {
-        console.log('[psiclo] novo agendamento detectado mas notificações estão desativadas');
+        showGlobalToast(`📅 Novo agendamento — ${clientName}`, time ? `Hoje às ${time}` : '');
       }
-      lastCount = count;
-      initialized = true;
+
+      // Novo lead
+      if (leads?.length > 0) {
+        const l = leads[0];
+        showGlobalToast(`🔔 Novo lead — ${escHtml(l.name || '')}`, escHtml(l.source || ''));
+      }
+
     } catch (e) {
-      console.warn('[psiclo polling]', e.message);
+      console.warn('[psiclo notifications]', e.message);
     }
   }
 
-  check();
-  _globalPollingTimer = setInterval(check, 30000);
+  // Primeira checagem após 3s (aguarda interação do usuário para AudioContext)
+  setTimeout(check, 3000);
+  _globalPollingTimer = setInterval(check, 10000); // 10s
 }
 
 function escHtml(str) {
@@ -181,18 +192,34 @@ function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
 }
 
-function showGlobalToast(title, subtitle = '') {
+// AudioContext criado na primeira interação do usuário
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+
+function playPlin() {
   try {
-    const ctx = new AudioContext();
+    const ctx = getAudioCtx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1046, ctx.currentTime);       // C6
+    osc.frequency.setValueAtTime(1318, ctx.currentTime + 0.1); // E6
+    osc.frequency.setValueAtTime(1568, ctx.currentTime + 0.2); // G6
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.6);
   } catch (_) {}
+}
+
+function showGlobalToast(title, subtitle = '') {
+  playPlin();
 
   const el = document.createElement('div');
   el.className = 'appt-toast';
