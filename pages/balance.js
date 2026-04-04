@@ -65,12 +65,13 @@ function renderGoalChart(profit, goal) {
   const msgEl = document.getElementById('goal-msg');
   if (!goal) {
     msgEl.textContent = 'Defina uma meta em Financeiro.';
+    msgEl.style.color = 'rgba(255,255,255,.7)';
   } else if (profit >= goal) {
     msgEl.textContent = `Meta atingida! +${currencyUtils.format(profit - goal)}`;
-    msgEl.style.color = 'var(--color-paid)';
+    msgEl.style.color = '#a5f3c0';
   } else {
     msgEl.textContent = `${pct}% — faltam ${currencyUtils.format(remaining)}`;
-    msgEl.style.color = 'var(--color-text-muted)';
+    msgEl.style.color = 'rgba(255,255,255,.85)';
   }
 
   goalChart = new Chart(ctx, {
