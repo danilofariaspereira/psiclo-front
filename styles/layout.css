@@ -421,3 +421,46 @@
   flex-shrink: 0;
 }
 .appt-toast__close:hover { opacity: 1; }
+
+/* ── Toggle de notificações na sidebar ── */
+.sidebar__notif {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .5rem var(--space-md);
+  border-top: 1px solid var(--dash-sidebar-border);
+}
+.sidebar__notif-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--dash-sidebar-text);
+  cursor: pointer;
+}
+/* Toggle switch */
+#notif-toggle {
+  appearance: none;
+  width: 34px;
+  height: 18px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 20px;
+  position: relative;
+  cursor: pointer;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+#notif-toggle::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: left .2s;
+}
+#notif-toggle:checked { background: #16a34a; }
+#notif-toggle:checked::after { left: 18px; }

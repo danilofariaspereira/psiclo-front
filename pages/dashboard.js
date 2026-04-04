@@ -5,6 +5,7 @@ import { store } from '../state/store.js';
 import { currencyUtils } from '../utils/currency.js';
 import { dateUtils } from '../utils/date.js';
 import { esc } from '../utils/sanitize.js';
+import { getNotifPref } from '../components/Sidebar.js';
 
 const API = 'https://psiclo-back.vercel.app/api';
 let lastLeadCount = 0;
@@ -34,6 +35,7 @@ function playNotificationSound() {
 }
 
 function showNotification(title, subtitle = '') {
+  if (!getNotifPref()) return; // respeita preferência do usuário
   playNotificationSound();
   const el = document.createElement('div');
   el.className = 'appt-toast';

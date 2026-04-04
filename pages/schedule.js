@@ -7,6 +7,7 @@ import { notify } from '../utils/notify.js';
 import { dateUtils } from '../utils/date.js';
 import { store } from '../state/store.js';
 import { esc } from '../utils/sanitize.js';
+import { getNotifPref } from '../components/Sidebar.js';
 
 const API = 'https://psiclo-back.vercel.app/api';
 let scheduleConfig = null;
@@ -161,6 +162,7 @@ async function openConfigModal() {
 }
 
 function showApptToast(title, subtitle = '') {
+  if (!getNotifPref()) return; // respeita preferência do usuário
   try {
     const ctx = new AudioContext();
     const osc = ctx.createOscillator();
