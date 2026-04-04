@@ -53,6 +53,10 @@ function applyFilters() {
   renderCards(filtered);
 }
 
+const SVG_PHONE = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.8a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+const SVG_EMAIL = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`;
+const SVG_BDAY = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><line x1="12" y1="14" x2="12" y2="17"/></svg>`;
+
 function renderCards(clients) {
   const grid = document.getElementById('clients-grid');
   if (!clients.length) {
@@ -69,11 +73,11 @@ function renderCards(clients) {
         </div>
       </div>
       <div class="client-card__info">
-        ${c.phone ? `<span>📞 ${esc(c.phone)}</span>` : ''}
-        ${c.email ? `<span>✉️ ${esc(c.email)}</span>` : ''}
-        ${c.birth_date ? `<span>🎂 ${new Date(c.birth_date).toLocaleDateString('pt-BR')}</span>` : ''}
+        ${c.phone ? `<span style="display:inline-flex;align-items:center;gap:.3rem">${SVG_PHONE} ${esc(c.phone)}</span>` : ''}
+        ${c.email ? `<span style="display:inline-flex;align-items:center;gap:.3rem">${SVG_EMAIL} ${esc(c.email)}</span>` : ''}
+        ${c.birth_date ? `<span style="display:inline-flex;align-items:center;gap:.3rem">${SVG_BDAY} ${new Date(c.birth_date).toLocaleDateString('pt-BR')}</span>` : ''}
       </div>
-      <div class="client-card__actions">
+      <div class="client-card__actions" style="justify-content:flex-end">
         <button class="btn btn--primary btn--sm" onclick="openClientHistory('${esc(c.id)}','${esc(c.name)}')">Histórico</button>
         <button class="btn btn--ghost btn--sm" onclick="deleteClient('${esc(c.id)}','${esc(c.name)}')">Remover</button>
       </div>

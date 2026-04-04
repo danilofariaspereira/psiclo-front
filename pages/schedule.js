@@ -363,6 +363,15 @@ window.openCompleteModal = (id, clientName) => {
     confirmLabel: 'Concluir e salvar',
     content: `
       <div class="form-group">
+        <label class="form-label">Forma de pagamento</label>
+        <select id="complete-payment-method" class="form-select">
+          <option value="pix">PIX</option>
+          <option value="dinheiro">Dinheiro</option>
+          <option value="cartao">Cartão</option>
+          <option value="plano_saude">Plano de saúde</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label class="form-label">Valor da sessão (R$)</label>
         <input type="number" id="complete-amount" class="form-input" placeholder="Ex: 150.00" min="0" step="0.01" />
       </div>
@@ -374,10 +383,11 @@ window.openCompleteModal = (id, clientName) => {
     onConfirm: async () => {
       const amount = document.getElementById('complete-amount').value;
       const notes = document.getElementById('complete-notes').value.trim();
+      const payment_method = document.getElementById('complete-payment-method').value;
       try {
         await apiFetch(`/schedule/appointments/${id}/complete`, {
           method: 'POST',
-          body: JSON.stringify({ amount: amount ? Number(amount) : null, notes: notes || null }),
+          body: JSON.stringify({ amount: amount ? Number(amount) : null, notes: notes || null, payment_method }),
         });
         notify.success('Sessão concluída! Pagamento criado no financeiro.');
         const blockBtn = document.getElementById('btn-block-day');
