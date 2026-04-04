@@ -44,6 +44,7 @@ async function loadClients() {
         <td>${c.birth_date ? new Date(c.birth_date).toLocaleDateString('pt-BR') : '—'}</td>
         <td><span class="badge ${c.active ? 'badge--converted' : 'badge--lost'}">${c.active ? 'Ativo' : 'Inativo'}</span></td>
         <td>
+          <button class="btn btn--primary btn--sm" onclick="openClientHistory('${c.id}','${c.name}')">Histórico</button>
           <button class="btn btn--sm btn--ghost" onclick="deleteClient('${c.id}','${c.name}')">Remover</button>
         </td>
       </tr>
@@ -87,7 +88,52 @@ function openNewClientModal() {
   });
 }
 
-window.deleteClient = async (id, name) => {
+window.openClientHistory = async (id, name) => {
+  let content = `<p style="text-align:center;color:var(--color-text-muted)">Carregando...</p>`;
+  Modal.open({ title: `Histórico — ${name}`, content, hideFooter: true });
+
+  try {
+    const [appts, payments] = await Promise.all([
+      apiFetch(`/clients/${id}/history`).catch(() => ({ appointments: [], payments: [] })),
+    ]);
+    const data = appts;
+
+    const apptRows = (data.appointments || []).map(a => `
+      <tr>
+        <td>${new Date(a.scheduled_at).toLocaleDateString('pt-BR')}</td>
+        <td>${new Date(a.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</td>
+        <td>${{ scheduled: 'Agendado', confirmed: 'Confirmado', completed: 'Concluído', cancelled: 'Cancelado', no_show: 'Não compareceu' }[a.status] || a.status}</td>
+      </tr>`).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--color-text-muted)">Nenhum agendamento.</td></tr>';
+
+    const payRows = (data.payments || []).map(p => `
+      <tr>
+        <td>${new Date(p.due_date + 'T12:00:00').toLocaleDateString('pt-BR')}</td>
+        <td>R$ ${Number(p.amount).toFixed(2).replace('.', ',')}</td>
+        <td>${{ paid: 'Pago', pending: 'Pendente', overdue: 'Vencido', cancelled: 'Cancelado' }[p.status] || p.status}</td>
+      </tr>`).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--color-text-muted)">Nenhum pagamento.</td></tr>';
+
+    const newContent = `
+      <p style="font-weight:700;margin-bottom:.5rem">Agendamentos</p>
+      <div class="table-wrapper" style="margin-bottom:1.5rem">
+        <table class="table">
+          <thead><tr><th>Data</th><th>Horário</th><th>Status</th></tr></thead>
+          <tbody>${apptRows}</tbody>
+        </table>
+      </div>
+      <p style="font-weight:700;margin-bottom:.5rem">Pagamentos</p>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead><tr><th>Vencimento</th><th>Valor</th><th>Status</th></tr></thead>
+          <tbody>${payRows}</tbody>
+        </table>
+      </div>`;
+
+    document.querySelector('#psiclo-modal .modal__body').innerHTML = newContent;
+    document.querySelector('#psiclo-modal .modal__footer').style.display = 'none';
+  } catch {
+    document.querySelector('#psiclo-modal .modal__body').innerHTML = '<p style="color:var(--color-error)">Erro ao carregar histórico.</p>';
+  }
+};
   if (!confirm(`Remover "${name}"?\n\nEsta ação é irreversível (LGPD).`)) return;
   try {
     await apiFetch(`/clients/${id}`, { method: 'DELETE' });

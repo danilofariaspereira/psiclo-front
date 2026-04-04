@@ -53,12 +53,18 @@ async function init() {
   await loadStats();
   await loadUpcoming();
 
-  // Real-time via Supabase
-  setupRealtime(session.professional.id);
+  // Busca token para autenticar o Realtime
+  const tokenRes = await fetch(`${API}/auth/token`, { credentials: 'include' });
+  if (tokenRes.ok) {
+    const { token } = await tokenRes.json();
+    setupRealtime(session.professional.id, token);
+  }
 }
 
-function setupRealtime(professionalId) {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+function setupRealtime(professionalId, token) {
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
 
   // Escuta novos leads — filtra no cliente pelo professional_id
   supabase

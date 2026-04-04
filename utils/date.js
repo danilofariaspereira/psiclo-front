@@ -6,12 +6,9 @@ export const dateUtils = {
   },
 
   formatTime(isoString, locale = 'pt-BR') {
-    // Se não tem timezone explícito, trata como horário local (sem conversão UTC)
-    const str = isoString.includes('+') || isoString.endsWith('Z')
-      ? isoString
-      : isoString + '-03:00'; // Brasília
-    return new Date(str).toLocaleTimeString(locale, {
+    return new Date(isoString).toLocaleTimeString(locale, {
       hour: '2-digit', minute: '2-digit',
+      timeZone: 'America/Sao_Paulo',
     });
   },
 
