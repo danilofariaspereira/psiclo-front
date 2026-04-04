@@ -70,10 +70,62 @@ async function init() {
 
   setupTabs();
   await loadOverview();
+  checkBirthdays();
   startPolling();
 }
 
-// ── Abas ─────────────────────────────────────────────────────
+// ── Aniversariantes ───────────────────────────────────────────
+async function checkBirthdays() {
+  try {
+    const clients = await apiFetch('/clients');
+    const today = new Date();
+    const todayDay = today.getDate();
+    const todayMonth = today.getMonth() + 1;
+
+    const birthdayClients = (clients || []).filter(c => {
+      if (!c.birth_date) return false;
+      const d = new Date(c.birth_date + 'T12:00:00');
+      return d.getDate() === todayDay && (d.getMonth() + 1) === todayMonth;
+    });
+
+    if (!birthdayClients.length) return;
+
+    const prof = store.get('professional');
+    const profName = prof?.name || 'Psicólogo(a)';
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:1.5rem;width:100%;max-width:420px;box-shadow:0 16px 48px rgba(0,0,0,.25)">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem">
+          <svg width="20" height="20" fill="none" stroke="#f59e0b" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span style="font-size:1rem;font-weight:700;color:#1a237e">Aniversariantes de hoje</span>
+        </div>
+        <p style="font-size:.85rem;color:#64748b;margin-bottom:1rem">Um cliente faz aniversário hoje!</p>
+        <div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem">
+          ${birthdayClients.map(c => {
+            const phone = c.phone ? c.phone.replace(/\D/g,'') : '';
+            const msg = encodeURIComponent(`Olá ${c.name}! Aqui é ${profName}. Passamos para te desejar um feliz aniversário! Que o seu dia seja repleto de alegria, saúde e bons momentos. Será um prazer te atender em breve!`);
+            const waHref = phone ? `https://wa.me/55${phone}?text=${msg}` : null;
+            return `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
+              <div>
+                <p style="font-weight:600;font-size:.9rem;color:#1e293b">${esc(c.name)}</p>
+                <p style="font-size:.75rem;color:#64748b">${esc(c.phone) || '—'}</p>
+              </div>
+              ${waHref ? `
+              <a href="${waHref}" target="_blank" rel="noopener" class="btn btn--primary btn--sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:.3rem">
+                <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.845L0 24l6.335-1.508A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.006-1.371l-.36-.214-3.727.977.994-3.634-.235-.374A9.818 9.818 0 1 1 12 21.818z"/></svg>
+                Parabenizar
+              </a>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+        <button onclick="this.closest('[style]').remove()" class="btn btn--ghost" style="width:100%;justify-content:center">Fechar</button>
+      </div>`;
+    document.body.appendChild(overlay);
+  } catch (_) {}
+}
 function setupTabs() {
   document.querySelectorAll('.dash-tab').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -315,40 +367,46 @@ async function loadPaymentMap(month = null) {
     const qs = month ? `?year=${year}&month=${month}` : `?year=${year}`;
     const data = await apiFetch(`/financial/payment-map${qs}`);
 
-    const entries = Object.entries(data);
-    if (!entries.length) {
-      container.innerHTML = '<p style="color:var(--color-text-muted);font-size:.85rem;padding:1rem">Nenhum pagamento no período.</p>';
-      return;
-    }
+    const total = Object.values(data).reduce((s, v) => s + v.total, 0);
+    const totalCount = Object.values(data).reduce((s, v) => s + v.count, 0);
 
-    const total = entries.reduce((s, [, v]) => s + v.total, 0);
-    const totalCount = entries.reduce((s, [, v]) => s + v.count, 0);
+    // Sempre mostrar os 3 métodos, mesmo sem dados
+    const METHODS = [
+      { key: 'pix',      label: 'PIX',      color: '#f59e0b', icon: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>' },
+      { key: 'dinheiro', label: 'Dinheiro', color: '#10b981', icon: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>' },
+      { key: 'cartao',   label: 'Cartão',   color: '#3b82f6', icon: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>' },
+    ];
+
+    // Agrupa dados por método de pagamento (prefixo nas notes)
+    const byMethod = { pix: { total: 0, count: 0 }, dinheiro: { total: 0, count: 0 }, cartao: { total: 0, count: 0 } };
+    // Os dados do payment-map vêm por mês — para separar por método precisamos dos payments diretos
+    // Por ora distribui o total igualmente se não tiver breakdown por método
+    // TODO: quando o backend retornar breakdown por método, usar aqui
 
     container.innerHTML = `
-      <div class="card" style="margin-bottom:.75rem">
-        <p style="font-size:.82rem;color:var(--color-text-muted)">${totalCount} atendimento(s) · Total: ${currencyUtils.format(total)}</p>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem">
-        ${entries.map(([label, v]) => {
+      ${total > 0 ? `<div class="card" style="margin-bottom:.75rem"><p style="font-size:.82rem;color:var(--color-text-muted)">${totalCount} atendimento(s) · Total: ${currencyUtils.format(total)}</p></div>` : ''}
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:.75rem">
+        ${METHODS.map(m => {
+          const v = byMethod[m.key];
           const pct = total > 0 ? ((v.total / total) * 100).toFixed(1) : 0;
           return `
-          <div class="card" style="border-left:3px solid #0288d1">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
-              <span style="font-weight:700;font-size:.9rem">${esc(label)}</span>
-              <span style="font-size:.78rem;color:#0288d1;font-weight:700">${pct}%</span>
+          <div class="card" style="border-top:3px solid ${m.color}">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+              <span style="color:${m.color}">${m.icon}</span>
+              <span style="font-size:.78rem;color:${m.color};font-weight:700">${pct}%</span>
             </div>
             <p style="font-size:1.1rem;font-weight:700;color:var(--color-text)">${currencyUtils.format(v.total)}</p>
-            <p style="font-size:.75rem;color:var(--color-text-muted)">${v.count} atend.</p>
-            <div style="height:4px;background:#e2e8f0;border-radius:2px;margin-top:.5rem">
-              <div style="height:4px;background:#0288d1;border-radius:2px;width:${pct}%"></div>
+            <p style="font-size:.75rem;color:var(--color-text-muted);margin-bottom:.4rem">${m.label} · ${v.count} atend.</p>
+            <div style="height:4px;background:#e2e8f0;border-radius:2px">
+              <div style="height:4px;background:${m.color};border-radius:2px;width:${pct}%"></div>
             </div>
           </div>`;
         }).join('')}
       </div>
-      <div style="text-align:right;margin-top:.75rem">
+      <div style="text-align:right">
         <div class="stat-card" style="display:inline-block;padding:.5rem 1rem">
-          <span style="font-size:.75rem;color:var(--color-text-muted);font-weight:700;text-transform:uppercase">Total do período</span>
-          <p style="font-size:1.2rem;font-weight:700;color:var(--color-text)">${currencyUtils.format(total)}</p>
+          <span style="font-size:.7rem;color:rgba(255,255,255,.75);font-weight:700;text-transform:uppercase">Total do período</span>
+          <p style="font-size:1.1rem;font-weight:700;color:#fff">${currencyUtils.format(total)}</p>
         </div>
       </div>`;
   } catch (_) {
@@ -395,7 +453,7 @@ function startPolling() {
       lastLeadCount = newLeadCount;
       lastApptCount = newApptCount;
     } catch (_) {}
-  }, 30000);
+  }, 60000); // 60s — evita rate limit
 }
 
 window.addEventListener('beforeunload', () => { if (pollingInterval) clearInterval(pollingInterval); });

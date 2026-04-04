@@ -64,6 +64,9 @@ async function loadLeads() {
           <td>${dateUtils.format(l.created_at)}</td>
           <td style="display:flex;gap:.4rem;align-items:center">
             ${waHref ? `<a href="${waHref}" target="_blank" rel="noopener noreferrer" class="btn btn--primary btn--sm" style="display:inline-flex;align-items:center;gap:.3rem">${WA_SVG} WhatsApp</a>` : ''}
+            ${l.status !== 'converted'
+              ? `<button class="btn btn--ghost btn--sm" onclick="markConverted('${esc(l.id)}')">Convertido</button>`
+              : `<span class="badge badge--converted">Convertido</span>`}
             <button class="btn btn--danger btn--sm" onclick="deleteLead('${esc(l.id)}')">Excluir</button>
           </td>
         </tr>
@@ -73,6 +76,17 @@ async function loadLeads() {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--color-error)">Erro ao carregar leads.</td></tr>`;
   }
 }
+
+window.markConverted = async (id) => {
+  try {
+    await apiFetch(`/leads/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'converted' }),
+    });
+    notify.success('Lead marcado como convertido.');
+    loadLeads();
+  } catch { notify.error('Erro ao atualizar.'); }
+};
 
 window.deleteLead = (id) => {
   Modal.open({
