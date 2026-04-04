@@ -310,7 +310,7 @@ async function loadHeatmap(month = null) {
     // Coleta todas as horas únicas
     const hours = [...new Set(Object.keys(data).map(k => k.split('|')[1]))].sort();
     if (!hours.length) {
-      container.innerHTML = '<p style="color:var(--color-text-muted);font-size:.85rem;padding:1rem">Nenhum atendimento concluído no período.</p>';
+      container.innerHTML = '<p style="color:rgba(255,255,255,.65);font-size:.85rem;padding:1rem">Nenhum atendimento concluído no período.</p>';
       return;
     }
 
@@ -326,12 +326,12 @@ async function loadHeatmap(month = null) {
     }
 
     let html = `<table style="border-collapse:collapse;width:100%;font-size:.75rem">
-      <thead><tr><th style="padding:4px 8px;text-align:left;color:var(--color-text-muted)">Hora</th>
-      ${DAYS_ORDER.map(d => `<th style="padding:4px 6px;text-align:center;color:var(--color-text-muted);text-transform:uppercase">${d}</th>`).join('')}
+      <thead><tr><th style="padding:4px 8px;text-align:left;color:rgba(255,255,255,.65)">Hora</th>
+      ${DAYS_ORDER.map(d => `<th style="padding:4px 6px;text-align:center;color:rgba(255,255,255,.65);text-transform:uppercase">${d}</th>`).join('')}
       </tr></thead><tbody>`;
 
     hours.forEach(hour => {
-      html += `<tr><td style="padding:3px 8px;color:var(--color-text-muted);white-space:nowrap">${hour}</td>`;
+      html += `<tr><td style="padding:3px 8px;color:rgba(255,255,255,.75);white-space:nowrap">${hour}</td>`;
       DAYS_ORDER.forEach(day => {
         const val = data[`${day}|${hour}`] || 0;
         html += `<td style="padding:3px 4px;text-align:center">

@@ -79,16 +79,16 @@
 
       <!-- ABA: Mapa de calor -->
       <div id="tab-heatmap" style="display:none">
-        <div class="card">
+        <div style="background:linear-gradient(135deg,#1a237e 0%,#1565c0 60%,#0288d1 100%);border-radius:var(--radius-md);padding:var(--space-lg);box-shadow:var(--shadow-md)">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
-            <p class="card__title" style="margin:0">Horários mais movimentados</p>
+            <p style="font-size:1rem;font-weight:600;color:#fff;margin:0">Horários mais movimentados</p>
             <div style="display:flex;gap:.4rem;flex-wrap:wrap" id="heatmap-months"></div>
           </div>
           <div id="heatmap-container" style="overflow-x:auto"></div>
-          <div style="display:flex;align-items:center;gap:.4rem;margin-top:.75rem;font-size:.72rem;color:var(--color-text-muted)">
+          <div style="display:flex;align-items:center;gap:.4rem;margin-top:.75rem;font-size:.72rem;color:rgba(255,255,255,.65)">
             <span>Menos</span>
             <span style="display:flex;gap:3px">
-              <span style="width:14px;height:14px;border-radius:3px;background:#f0f4f8;border:1px solid #dde1e7;display:inline-block"></span>
+              <span style="width:14px;height:14px;border-radius:3px;background:rgba(255,255,255,.15);display:inline-block"></span>
               <span style="width:14px;height:14px;border-radius:3px;background:#c8e6c9;display:inline-block"></span>
               <span style="width:14px;height:14px;border-radius:3px;background:#81c784;display:inline-block"></span>
               <span style="width:14px;height:14px;border-radius:3px;background:#ffa726;display:inline-block"></span>

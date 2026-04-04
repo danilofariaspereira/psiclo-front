@@ -504,19 +504,19 @@
 .dash-filter-btn {
   padding: .3rem .7rem;
   border-radius: 20px;
-  border: 1.5px solid rgba(26,35,126,0.3);
-  background: #fff;
+  border: 1.5px solid rgba(255,255,255,0.6);
+  background: transparent;
   font-size: .75rem;
   font-weight: 600;
-  color: #1a237e;
+  color: rgba(255,255,255,0.85);
   cursor: pointer;
   transition: all .15s;
 }
-.dash-filter-btn:hover { border-color: #0288d1; color: #0288d1; }
+.dash-filter-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
 .dash-filter-btn--active {
-  background: linear-gradient(135deg, #1a237e 0%, #1565c0 60%, #0288d1 100%);
+  background: rgba(255,255,255,0.25);
   color: #fff;
-  border-color: transparent;
+  border-color: #fff;
 }
 
 /* ── Subtítulo dos stat cards ── */
