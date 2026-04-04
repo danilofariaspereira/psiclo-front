@@ -145,10 +145,11 @@ function startGlobalPolling() {
     try {
       const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
         .split('/').reverse().join('-');
-      const res = await fetch(`${API}/schedule/appointments?date=${today}`, {
+      const ts = Date.now(); // evita cache 304
+      const res = await fetch(`${API}/schedule/appointments?date=${today}&_=${ts}`, {
         credentials: 'include',
         cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
+        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
       });
       if (!res.ok) return;
       const appts = await res.json();
