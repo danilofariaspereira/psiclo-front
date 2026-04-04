@@ -278,11 +278,10 @@ window.cancelAppt = async (id) => {
       method: 'PATCH',
       body: JSON.stringify({ status: 'cancelled' }),
     });
-    notify('Agendamento cancelado.', 'success');
-    // Recarrega o dia atual
+    notify.success('Agendamento cancelado.');
     const blockBtn = document.getElementById('btn-block-day');
     if (blockBtn.dataset.date) loadDay(new Date(blockBtn.dataset.date + 'T12:00:00'));
-  } catch { notify('Erro ao cancelar.', 'error'); }
+  } catch { notify.error('Erro ao cancelar.'); }
 };
 
 window.openCompleteModal = (id, clientName) => {
@@ -292,11 +291,7 @@ window.openCompleteModal = (id, clientName) => {
     content: `
       <div class="form-group">
         <label class="form-label">Valor da sessão (R$)</label>
-        <input type="number" id="complete-amount" class="form-input" placeholder="Ex: 150,00" min="0" step="0.01" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Chave PIX (opcional)</label>
-        <input type="text" id="complete-pix" class="form-input" placeholder="CPF, e-mail ou telefone" />
+        <input type="number" id="complete-amount" class="form-input" placeholder="Ex: 150.00" min="0" step="0.01" />
       </div>
       <div class="form-group">
         <label class="form-label">Observações da sessão (opcional)</label>
@@ -306,16 +301,15 @@ window.openCompleteModal = (id, clientName) => {
     onConfirm: async () => {
       const amount = document.getElementById('complete-amount').value;
       const notes = document.getElementById('complete-notes').value.trim();
-      const pix_key = document.getElementById('complete-pix').value.trim();
       try {
         await apiFetch(`/schedule/appointments/${id}/complete`, {
           method: 'POST',
-          body: JSON.stringify({ amount: amount ? Number(amount) : null, notes: notes || null, pix_key: pix_key || null }),
+          body: JSON.stringify({ amount: amount ? Number(amount) : null, notes: notes || null }),
         });
-        notify('Sessão concluída! Pagamento criado no financeiro.', 'success');
+        notify.success('Sessão concluída! Pagamento criado no financeiro.');
         const blockBtn = document.getElementById('btn-block-day');
         if (blockBtn.dataset.date) loadDay(new Date(blockBtn.dataset.date + 'T12:00:00'));
-      } catch { notify('Erro ao concluir sessão.', 'error'); }
+      } catch { notify.error('Erro ao concluir sessão.'); }
     },
   });
 };
