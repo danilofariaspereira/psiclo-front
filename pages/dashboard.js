@@ -4,11 +4,11 @@ import { renderHeader } from '../components/Header.js';
 import { store } from '../state/store.js';
 import { currencyUtils } from '../utils/currency.js';
 import { dateUtils } from '../utils/date.js';
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 const API = 'https://psiclo-back.vercel.app/api';
-const SUPABASE_URL = 'https://wdqqgomhzakkxycirvxp.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_qnHkY9E1P2XwSnCawneNiA_SHDuc3iMp';
+let lastLeadCount = 0;
+let lastApptCount = 0;
+let pollingInterval = null;
 
 async function apiFetch(path) {
   const res = await fetch(`${API}${path}`, { credentials: 'include' });
@@ -16,7 +16,6 @@ async function apiFetch(path) {
   return res.json();
 }
 
-// Som de notificação
 function playNotificationSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -53,47 +52,38 @@ async function init() {
   await loadStats();
   await loadUpcoming();
 
-  // Busca token para autenticar o Realtime
-  const tokenRes = await fetch(`${API}/auth/token`, { credentials: 'include' });
-  if (tokenRes.ok) {
-    const { token } = await tokenRes.json();
-    setupRealtime(session.professional.id, token);
-  }
+  // Polling seguro via backend — sem expor dados ao Realtime público
+  startPolling();
 }
 
-function setupRealtime(professionalId, token) {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
+function startPolling() {
+  pollingInterval = setInterval(async () => {
+    try {
+      const [leads, today] = await Promise.all([
+        apiFetch('/leads?status=new'),
+        apiFetch(`/schedule/appointments?date=${new Date().toISOString().split('T')[0]}`),
+      ]);
+      const newLeadCount = leads?.length ?? 0;
+      const newApptCount = today?.length ?? 0;
 
-  // Escuta novos leads — filtra no cliente pelo professional_id
-  supabase
-    .channel('leads-realtime')
-    .on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'leads',
-    }, (payload) => {
-      if (payload.new.professional_id !== professionalId) return;
-      showNotification(`🔔 Novo lead: ${payload.new.name}`);
-      loadStats();
-    })
-    .subscribe();
-
-  // Escuta novos agendamentos — filtra no cliente pelo professional_id
-  supabase
-    .channel('appointments-realtime')
-    .on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'appointments',
-    }, () => {
-      showNotification(`📅 Novo agendamento!`);
-      loadStats();
-      loadUpcoming();
-    })
-    .subscribe();
+      if (newLeadCount > lastLeadCount && lastLeadCount > 0) {
+        showNotification('Novo lead recebido!');
+        loadStats();
+      }
+      if (newApptCount > lastApptCount && lastApptCount > 0) {
+        showNotification('Novo agendamento!');
+        loadUpcoming();
+        loadStats();
+      }
+      lastLeadCount = newLeadCount;
+      lastApptCount = newApptCount;
+    } catch (_) {}
+  }, 30000);
 }
+
+window.addEventListener('beforeunload', () => {
+  if (pollingInterval) clearInterval(pollingInterval);
+});
 
 async function loadStats() {
   try {
@@ -131,7 +121,7 @@ async function loadUpcoming() {
         <td>${dateUtils.formatTime(a.scheduled_at)}</td>
         <td>${a.clients?.name ?? '—'}</td>
         <td>${a.modality === 'online' ? '🌐 Online' : '🏢 Presencial'}</td>
-        <td><span class="badge badge--${a.status}">${a.status}</span></td>
+        <td><span class="badge badge--${a.status}">${{ scheduled:'Agendado', confirmed:'Confirmado', completed:'Concluído', cancelled:'Cancelado', no_show:'Não compareceu' }[a.status] || a.status}</span></td>
       </tr>
     `).join('');
   } catch (e) {
@@ -139,7 +129,6 @@ async function loadUpcoming() {
   }
 }
 
-// Animação da notificação
 const style = document.createElement('style');
 style.textContent = `@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`;
 document.head.appendChild(style);
