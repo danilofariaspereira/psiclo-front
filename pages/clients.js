@@ -158,11 +158,30 @@ window.openClientHistory = async (id, name) => {
 };
 
 window.viewHistoryNote = (notes) => {
-  Modal.open({
-    title: 'Observação da sessão',
-    content: `<p style="white-space:pre-wrap;line-height:1.6">${notes}</p>`,
-    hideFooter: true,
-  });
+  // Remove overlay anterior se existir
+  document.getElementById('note-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'note-overlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.45);
+  `;
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:12px;padding:1.5rem;max-width:480px;width:90%;max-height:70vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2);position:relative;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <strong style="font-size:1rem">Observação da sessão</strong>
+        <button id="note-overlay-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;line-height:1;color:#666">×</button>
+      </div>
+      <p style="white-space:pre-wrap;line-height:1.6;font-size:.9rem;color:#333">${notes}</p>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('#note-overlay-close').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 };
 
 window.editClient = async (id) => {
