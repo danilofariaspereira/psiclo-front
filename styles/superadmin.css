@@ -163,6 +163,9 @@
 
 /* ── Table ── */
 .sa-table-wrap { background: var(--table-bg); border: 1px solid var(--table-border); border-radius: 10px; overflow: hidden; }
+/* No modo claro, força fundo branco sólido para contraste com o gradiente azul do fundo */
+:root .sa-table-wrap { background: #fff; }
+[data-theme="dark"] .sa-table-wrap { background: var(--table-bg); }
 .sa-table { width: 100%; border-collapse: collapse; }
 .sa-table th { background: var(--table-head); padding: .65rem 1rem; text-align: left; font-size: .72rem; color: var(--text-sub); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
 .sa-table td { padding: .75rem 1rem; border-bottom: 1px solid var(--table-border); font-size: .85rem; color: var(--table-text); }
@@ -182,8 +185,10 @@
 .sa-btn-primary:hover { opacity: .88; }
 .sa-btn-primary:disabled { opacity: .5; cursor: not-allowed; }
 .sa-btn-full { width: 100%; justify-content: center; padding: .75rem; font-size: .95rem; border-radius: 6px; margin-top: .5rem; }
-.sa-btn-sm { background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.35); padding: .28rem .65rem; border-radius: 5px; font-size: .75rem; cursor: pointer; margin-right: .25rem; transition: opacity .15s; font-weight: 600; color: #fff; }
-.sa-btn-sm:hover { background: rgba(255,255,255,0.25); }
+.sa-btn-sm { background: transparent; border: 1.5px solid var(--table-text); padding: .28rem .65rem; border-radius: 5px; font-size: .75rem; cursor: pointer; margin-right: .25rem; transition: all .15s; font-weight: 600; color: var(--table-text); }
+.sa-btn-sm:hover { background: rgba(0,0,0,0.08); }
+[data-theme="dark"] .sa-btn-sm { border-color: rgba(255,255,255,0.5); color: rgba(255,255,255,0.85); }
+[data-theme="dark"] .sa-btn-sm:hover { background: rgba(255,255,255,0.12); }
 .sa-btn-danger { border-color: #ef4444; color: #1a1a1a; background: #fca5a5; }
 .sa-btn-danger:hover { background: #f87171; }
 .sa-btn-warning { border-color: #d97706; color: #1a1a1a; background: #fbbf24; }
