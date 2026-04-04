@@ -434,30 +434,85 @@ $('saCreateProfBtn').addEventListener('click', async () => {
 
 // ── Financeiro ────────────────────────────────────────────────
 let chartRevenue = null;
-const PLAN_PRICE = 69.90;
+const DEFAULT_PRICE = 69.90;
 
 async function loadFinancial() {
   const { ok, data } = await api('/professionals');
   if (!ok) return;
-  const active = data.filter(p => p.active && (p.plan === 'pro' || p.plan === 'enterprise')).length;
-  const monthly = active * PLAN_PRICE;
+
+  // Conta TODOS os ativos — plano único R$ 69,90
+  const activeProfs = data.filter(p => p.active);
+  const active = activeProfs.length;
+  const monthly = activeProfs.reduce((s, p) => s + (p.monthly_price || DEFAULT_PRICE), 0);
+
   $('finActive').textContent = active;
   $('finRevenue').textContent = monthly.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   $('finAnnual').textContent = (monthly * 12).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+  // Gráfico — acumulado por mês de cadastro
   const byMonth = {};
-  data.filter(p => p.plan === 'pro' || p.plan === 'enterprise').forEach(p => {
+  activeProfs.forEach(p => {
     const m = new Date(p.created_at).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
-    byMonth[m] = (byMonth[m] || 0) + PLAN_PRICE;
+    byMonth[m] = (byMonth[m] || 0) + (p.monthly_price || DEFAULT_PRICE);
   });
 
   if (chartRevenue) chartRevenue.destroy();
   chartRevenue = new Chart($('chartRevenue'), {
     type: 'line',
-    data: { labels: Object.keys(byMonth).length ? Object.keys(byMonth) : ['Sem dados'], datasets: [{ label: 'Receita (R$)', data: Object.values(byMonth).length ? Object.values(byMonth) : [0], borderColor: '#0288d1', backgroundColor: 'rgba(2,136,209,0.12)', fill: true, tension: 0.4, pointBackgroundColor: '#29b6f6', pointBorderColor: '#0288d1', pointRadius: 3, pointHoverRadius: 5, borderWidth: 2 }] },
-    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } }, y: { ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 }, callback: v => `R$ ${v.toFixed(0)}` }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } } } }
+    data: {
+      labels: Object.keys(byMonth).length ? Object.keys(byMonth) : ['Sem dados'],
+      datasets: [{ label: 'Receita (R$)', data: Object.values(byMonth).length ? Object.values(byMonth) : [0], borderColor: '#0288d1', backgroundColor: 'rgba(2,136,209,0.12)', fill: true, tension: 0.4, pointBackgroundColor: '#29b6f6', pointBorderColor: '#0288d1', pointRadius: 3, pointHoverRadius: 5, borderWidth: 2 }],
+    },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } }, y: { ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 10 }, callback: v => `R$ ${v.toFixed(0)}` }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { color: 'transparent' } } } },
   });
+
+  // Tabela de clientes ativos
+  const tableEl = $('finClientsList');
+  if (!tableEl) return;
+  if (!activeProfs.length) { tableEl.innerHTML = '<p class="sa-empty">Nenhum cliente ativo.</p>'; return; }
+  tableEl.innerHTML = `<table class="sa-table" style="margin-top:1rem">
+    <thead><tr><th>Nome</th><th>E-mail</th><th>Mensalidade</th><th>Desde</th><th style="text-align:center">Ações</th></tr></thead>
+    <tbody>${activeProfs.map(p => `<tr>
+      <td>${esc(p.name)}</td>
+      <td>${esc(p.email)}</td>
+      <td>${(p.monthly_price || DEFAULT_PRICE).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+      <td>${new Date(p.created_at).toLocaleDateString('pt-BR')}</td>
+      <td style="text-align:center">
+        <button class="sa-btn-sm" onclick="editClientPrice('${esc(p.id)}','${esc(p.name)}',${p.monthly_price || DEFAULT_PRICE})">Editar preço</button>
+        <button class="sa-btn-sm sa-btn-danger" onclick="deleteProf('${esc(p.id)}','${esc(p.name)}')">Excluir</button>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
 }
+
+window.editClientPrice = (id, name, currentPrice) => {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;';
+  overlay.innerHTML = `
+    <div class="sa-modal" style="max-width:340px;">
+      <h3 class="sa-modal__title">Editar preço — ${esc(name)}</h3>
+      <div class="sa-field">
+        <label>Mensalidade (R$)</label>
+        <input type="number" id="newPrice" value="${currentPrice}" min="0" step="0.01" />
+      </div>
+      <p class="sa-error" id="priceError"></p>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+        <button class="sa-btn-primary" style="flex:1;justify-content:center;background:rgba(255,255,255,0.15);" id="priceCancel">Cancelar</button>
+        <button class="sa-btn-primary" style="flex:1;justify-content:center;" id="priceSave">Salvar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.getElementById('priceCancel').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('priceSave').addEventListener('click', async () => {
+    const val = parseFloat(document.getElementById('newPrice').value);
+    if (!val || val <= 0) { document.getElementById('priceError').textContent = 'Valor inválido.'; return; }
+    const { ok, data } = await api(`/professionals/${id}`, { method: 'PATCH', body: JSON.stringify({ monthly_price: val }) });
+    if (!ok) { document.getElementById('priceError').textContent = data.error; return; }
+    overlay.remove();
+    loadFinancial();
+  });
+};
 
 // ── Superadmins ───────────────────────────────────────────────
 async function loadSuperadmins() {
