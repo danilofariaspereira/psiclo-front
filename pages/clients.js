@@ -165,7 +165,10 @@ window.openClientHistory = async (id, name) => {
 };
 
 window.viewHistoryNote = (notes) => {
-  // Remove overlay anterior se existir
+  // Fecha o modal de histórico antes de abrir o overlay
+  document.getElementById('psiclo-modal')?.classList.remove('modal--open');
+  document.body.style.overflow = '';
+
   document.getElementById('note-overlay')?.remove();
 
   const overlay = document.createElement('div');
