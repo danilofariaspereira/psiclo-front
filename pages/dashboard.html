@@ -52,16 +52,16 @@
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
-          <div class="card">
+          <div class="card card--blue">
             <p class="card__title">Faturamento diário (mês atual)</p>
-            <p style="font-size:.75rem;color:var(--color-text-muted);margin-bottom:.75rem">Linha suave mostrando os dias fortes e fracos do mês.</p>
+            <p style="font-size:.75rem;color:rgba(255,255,255,.65);margin-bottom:.75rem">Linha suave mostrando os dias fortes e fracos do mês.</p>
             <div style="position:relative;height:160px">
               <canvas id="chart-daily"></canvas>
             </div>
           </div>
-          <div class="card">
+          <div class="card card--blue">
             <p class="card__title">Resumo do mês</p>
-            <p style="font-size:.75rem;color:var(--color-text-muted);margin-bottom:.75rem">Relação entre faturamento e despesas para calcular o lucro.</p>
+            <p style="font-size:.75rem;color:rgba(255,255,255,.65);margin-bottom:.75rem">Relação entre faturamento e despesas para calcular o lucro.</p>
             <div style="max-width:160px;margin:0 auto;height:160px">
               <canvas id="chart-summary"></canvas>
             </div>

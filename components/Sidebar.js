@@ -157,6 +157,8 @@ function startGlobalPolling() {
           ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
           : '';
         showGlobalToast(`📅 Novo agendamento — ${clientName}`, time ? `Hoje às ${escHtml(time)}` : '');
+      } else if (initialized && count > lastCount && !getNotifPref()) {
+        console.log('[psiclo] novo agendamento detectado mas notificações estão desativadas');
       }
       lastCount = count;
       initialized = true;

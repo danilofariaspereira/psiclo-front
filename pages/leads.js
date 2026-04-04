@@ -54,21 +54,20 @@ async function loadCharts() {
       type: 'doughnut',
       data: {
         labels: ['Convertidos', 'Pendentes', 'Perdidos'],
-        datasets: [{ data: [converted || 0.001, pending || 0.001, lost || 0.001], backgroundColor: ['#16a34a', '#f59e0b', '#dc2626'], borderWidth: 0 }],
+        datasets: [{ data: [converted || 0.001, pending || 0.001, lost || 0.001], backgroundColor: ['#a5f3c0', '#fde68a', '#fca5a5'], borderWidth: 0 }],
       },
       options: {
         responsive: true, maintainAspectRatio: false, cutout: '65%',
         plugins: {
-          legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } },
+          legend: { position: 'bottom', labels: { color: 'rgba(255,255,255,.85)', font: { size: 11 }, padding: 10 } },
           tooltip: { callbacks: { label: c => ` ${c.label}: ${c.raw === 0.001 ? 0 : c.raw}` } },
         },
       },
     });
 
-    // Gráfico de origem (barras horizontais)
     const sourceLabels = Object.keys(bySource);
     const sourceData = Object.values(bySource);
-    const colors = ['#0288d1','#7c3aed','#f59e0b','#16a34a','#dc2626','#9ca3af','#0ea5e9','#8b5cf6'];
+    const colors = ['rgba(255,255,255,0.85)','rgba(255,255,255,0.65)','rgba(255,255,255,0.5)','rgba(255,255,255,0.4)','rgba(255,255,255,0.3)','rgba(255,255,255,0.25)'];
 
     if (sourceChart) sourceChart.destroy();
     sourceChart = new Chart(document.getElementById('chart-source'), {
@@ -82,8 +81,8 @@ async function loadCharts() {
         indexAxis: 'y',
         plugins: { legend: { display: false } },
         scales: {
-          x: { ticks: { font: { size: 10 }, stepSize: 1 }, grid: { display: false } },
-          y: { ticks: { font: { size: 10 } } },
+          x: { ticks: { color: 'rgba(255,255,255,.7)', font: { size: 10 }, stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.1)' } },
+          y: { ticks: { color: 'rgba(255,255,255,.85)', font: { size: 10 } }, grid: { display: false } },
         },
       },
     });

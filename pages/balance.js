@@ -75,7 +75,7 @@ function renderGoalChart(profit, goal) {
     data: {
       datasets: [{
         data: goal > 0 ? [Math.max(profit, 0), remaining] : [0, 1],
-        backgroundColor: ['#0288d1', 'rgba(0,0,0,0.07)'],
+        backgroundColor: ['#fff', 'rgba(255,255,255,0.15)'],
         borderWidth: 0,
       }],
     },
@@ -89,7 +89,7 @@ function renderGoalChart(profit, goal) {
         const { ctx, width, height } = chart;
         ctx.save();
         ctx.font = 'bold 1rem Inter,sans-serif';
-        ctx.fillStyle = '#1a237e';
+        ctx.fillStyle = '#fff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(`${pct}%`, width / 2, height / 2);
@@ -113,7 +113,7 @@ function renderBarChart(revenue, expenses, goal) {
       labels,
       datasets: [{
         data,
-        backgroundColor: ['rgba(2,136,209,0.8)', 'rgba(217,78,78,0.8)', 'rgba(26,35,126,0.6)'],
+        backgroundColor: ['rgba(255,255,255,0.85)', 'rgba(252,165,165,0.85)', 'rgba(255,255,255,0.3)'],
         borderRadius: 6,
         borderWidth: 0,
       }],
@@ -122,12 +122,13 @@ function renderBarChart(revenue, expenses, goal) {
       responsive: true,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { font: { size: 11 } }, grid: { display: false } },
-        y: { ticks: { callback: v => `R$${v}`, font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { ticks: { color: 'rgba(255,255,255,.8)', font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { callback: v => `R$${v}`, color: 'rgba(255,255,255,.6)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.1)' } },
       },
     },
   });
 }
+
 
 function showGoalCelebration(revenue, goal) {
   const existing = document.getElementById('goal-celebration');
