@@ -164,17 +164,28 @@ window.editClient = async (id) => {
     title: `Editar — ${esc(client.name)}`,
     confirmLabel: 'Salvar',
     content: `
-      <div class="form-group"><label class="form-label">Nome *</label><input id="ec-name" class="form-input" value="${esc(client.name)}" /></div>
-      <div class="form-group"><label class="form-label">Telefone</label><input id="ec-phone" class="form-input" value="${esc(client.phone||'')}" placeholder="(21) 99999-9999" /></div>
-      <div class="form-group"><label class="form-label">E-mail</label><input id="ec-email" type="email" class="form-input" value="${esc(client.email||'')}" /></div>
-      <div class="form-group"><label class="form-label">Data de nascimento *</label><input id="ec-birth" type="date" class="form-input" value="${client.birth_date || ''}" /></div>
-      <div class="form-group"><label class="form-label">CPF (opcional)</label><input id="ec-cpf" class="form-input" value="${esc(client.cpf||'')}" placeholder="000.000.000-00" maxlength="14" /></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div class="form-group" style="margin:0"><label class="form-label">Nome *</label><input id="ec-name" class="form-input" value="${esc(client.name)}" /></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Telefone</label><input id="ec-phone" class="form-input" value="${esc(client.phone||'')}" placeholder="(21) 99999-9999" /></div>
+        <div class="form-group" style="margin:0;grid-column:1/-1"><label class="form-label">E-mail</label><input id="ec-email" type="email" class="form-input" value="${esc(client.email||'')}" /></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Data de nascimento *</label><input id="ec-birth" type="text" class="form-input" value="${client.birth_date ? new Date(client.birth_date+'T12:00:00').toLocaleDateString('pt-BR') : ''}" placeholder="DD/MM/AAAA" maxlength="10" inputmode="numeric" /></div>
+        <div class="form-group" style="margin:0"><label class="form-label">CPF (opcional)</label><input id="ec-cpf" class="form-input" value="${esc(client.cpf||'')}" placeholder="000.000.000-00" maxlength="14" /></div>
+      </div>
     `,
     onConfirm: async () => {
       const name = document.getElementById('ec-name').value.trim();
-      const birth_date = document.getElementById('ec-birth').value;
+      const birthRaw = document.getElementById('ec-birth').value.trim();
       if (!name) { notify.error('Nome obrigatório.'); return; }
-      if (!birth_date) { notify.error('Data de nascimento obrigatória.'); return; }
+      if (!birthRaw) { notify.error('Data de nascimento obrigatória.'); return; }
+
+      // Converte DD/MM/AAAA → YYYY-MM-DD
+      let birth_date = birthRaw;
+      if (birthRaw.includes('/')) {
+        const [d, m, y] = birthRaw.split('/');
+        birth_date = `${y}-${m?.padStart(2,'0')}-${d?.padStart(2,'0')}`;
+      }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(birth_date)) { notify.error('Data inválida. Use DD/MM/AAAA.'); return; }
+
       try {
         await apiFetch(`/clients/${id}`, {
           method: 'PATCH',
@@ -191,6 +202,18 @@ window.editClient = async (id) => {
       } catch { notify.error('Erro ao atualizar cliente.'); }
     },
   });
+
+  // Máscara DD/MM/AAAA no campo de data
+  setTimeout(() => {
+    const input = document.getElementById('ec-birth');
+    if (!input) return;
+    input.addEventListener('input', () => {
+      let v = input.value.replace(/\D/g,'').slice(0,8);
+      if (v.length >= 5) v = v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4);
+      else if (v.length >= 3) v = v.slice(0,2)+'/'+v.slice(2);
+      input.value = v;
+    });
+  }, 50);
 };
 
 window.deleteClient = async (id, name) => {
