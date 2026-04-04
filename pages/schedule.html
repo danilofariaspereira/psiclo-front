@@ -41,17 +41,10 @@
       </div>
 
       <!-- Agendamentos do dia -->
-      <div class="card" style="margin-top:1.5rem">
-        <p class="card__title">Agendamentos do dia</p>
-        <div class="table-wrapper">
-          <table class="table">
-            <thead>
-              <tr><th>Horário</th><th>Cliente</th><th>Modalidade</th><th>Status</th><th>Ações</th></tr>
-            </thead>
-            <tbody id="appt-body">
-              <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Selecione uma data no calendário.</td></tr>
-            </tbody>
-          </table>
+      <div id="appts-section" style="margin-top:1.5rem;display:none">
+        <div class="card">
+          <p class="card__title" id="appts-day-title">Agendamentos do dia</p>
+          <div id="appt-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin-top:1rem"></div>
         </div>
       </div>
 

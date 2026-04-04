@@ -258,3 +258,27 @@
   .schedule-layout { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Cards de agendamento ── */
+.appt-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition);
+}
+.appt-card:hover { box-shadow: var(--shadow-md); }
+.appt-card--completed { border-left: 4px solid var(--color-success); background: #f0fdf4; }
+.appt-card--cancelled { border-left: 4px solid var(--color-error); opacity: .7; }
+.appt-card--scheduled { border-left: 4px solid #0288d1; }
+.appt-card--confirmed { border-left: 4px solid #7c3aed; }
+
+.appt-card__time { font-size: .78rem; color: var(--color-text-muted); font-weight: 600; }
+.appt-card__client { font-size: 1rem; font-weight: 700; color: var(--color-text); }
+.appt-card__modality { font-size: .8rem; color: var(--color-text-muted); }
+.appt-card__status { display: inline-block; font-size: .72rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+.appt-card__actions { display: flex; gap: var(--space-xs); margin-top: var(--space-xs); }

@@ -53,9 +53,10 @@ async function loadLeads() {
         <td>${l.source || '—'}</td>
         <td>
           <select class="form-select" style="padding:4px 8px;font-size:.8rem" data-id="${l.id}" onchange="updateStatus(this)">
-            ${['new','contacted','converted','lost'].map((s) =>
-              `<option value="${s}" ${l.status === s ? 'selected' : ''}>${s}</option>`
-            ).join('')}
+            <option value="new" ${l.status === 'new' ? 'selected' : ''}>Novo</option>
+            <option value="contacted" ${l.status === 'contacted' ? 'selected' : ''}>Contactado</option>
+            <option value="converted" ${l.status === 'converted' ? 'selected' : ''}>Convertido</option>
+            <option value="lost" ${l.status === 'lost' ? 'selected' : ''}>Perdido</option>
           </select>
         </td>
         <td>${dateUtils.format(l.created_at)}</td>

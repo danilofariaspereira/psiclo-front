@@ -137,7 +137,7 @@ async function loadDay(date) {
   ]);
 
   renderSlots(slotsData.slots || []);
-  renderAppts(appts);
+  renderAppts(appts, dateStr);
 }
 
 function renderSlots(slots) {
@@ -165,26 +165,43 @@ const STATUS_PT = {
   no_show: 'Não compareceu',
 };
 
-function renderAppts(appts) {
-  const tbody = document.getElementById('appt-body');
+const STATUS_COLOR = {
+  scheduled: '#0288d1',
+  confirmed: '#7c3aed',
+  completed: '#16a34a',
+  cancelled: '#dc2626',
+  no_show: '#9ca3af',
+};
+
+function renderAppts(appts, dateStr) {
+  const section = document.getElementById('appts-section');
+  const container = document.getElementById('appt-cards');
+  const title = document.getElementById('appts-day-title');
+
+  section.style.display = 'block';
+  title.textContent = `Agendamentos — ${new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}`;
+
   if (!appts.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--color-text-muted)">Nenhum agendamento.</td></tr>`;
+    container.innerHTML = `<p style="color:var(--color-text-muted);font-size:.9rem;grid-column:1/-1">Nenhum agendamento neste dia.</p>`;
     return;
   }
-  tbody.innerHTML = appts.map((a) => `
-    <tr>
-      <td>${dateUtils.formatTime(a.scheduled_at)}</td>
-      <td>${a.clients?.name ?? '—'}</td>
-      <td>${a.modality === 'online' ? '🌐 Online' : '🏢 Presencial'}</td>
-      <td><span class="badge badge--${a.status}">${STATUS_PT[a.status] || a.status}</span></td>
-      <td>
-        <select class="form-select" style="padding:4px 8px;font-size:.8rem" onchange="updateApptStatus('${a.id}', this.value)">
-          ${Object.entries(STATUS_PT).map(([val, label]) =>
-            `<option value="${val}" ${a.status === val ? 'selected' : ''}>${label}</option>`
-          ).join('')}
-        </select>
-      </td>
-    </tr>
+
+  container.innerHTML = appts.map(a => `
+    <div class="appt-card appt-card--${a.status}">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="appt-card__time">${dateUtils.formatTime(a.scheduled_at)}</span>
+        <span class="appt-card__status" style="background:${STATUS_COLOR[a.status]}22;color:${STATUS_COLOR[a.status]}">${STATUS_PT[a.status] || a.status}</span>
+      </div>
+      <div class="appt-card__client">${a.clients?.name ?? '—'}</div>
+      <div class="appt-card__modality">${a.modality === 'online' ? '🌐 Online' : '🏢 Presencial'}</div>
+      ${a.notes ? `<div style="font-size:.8rem;color:var(--color-text-muted);font-style:italic">${a.notes}</div>` : ''}
+      <div class="appt-card__actions">
+        ${a.status !== 'completed' && a.status !== 'cancelled' ? `
+          <button class="btn btn--primary btn--sm" onclick="openCompleteModal('${a.id}','${a.clients?.name ?? ''}')">Concluir</button>
+          <button class="btn btn--ghost btn--sm" onclick="cancelAppt('${a.id}')">Cancelar</button>
+        ` : ''}
+      </div>
+    </div>
   `).join('');
 }
 
@@ -252,6 +269,55 @@ window.updateApptStatus = async (id, status) => {
   } catch {
     notify.error('Erro ao atualizar.');
   }
+};
+
+window.cancelAppt = async (id) => {
+  if (!confirm('Cancelar este agendamento?')) return;
+  try {
+    await apiFetch(`/schedule/appointments/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'cancelled' }),
+    });
+    notify('Agendamento cancelado.', 'success');
+    // Recarrega o dia atual
+    const blockBtn = document.getElementById('btn-block-day');
+    if (blockBtn.dataset.date) loadDay(new Date(blockBtn.dataset.date + 'T12:00:00'));
+  } catch { notify('Erro ao cancelar.', 'error'); }
+};
+
+window.openCompleteModal = (id, clientName) => {
+  Modal.open({
+    title: `Concluir — ${clientName}`,
+    confirmLabel: 'Concluir e salvar',
+    content: `
+      <div class="form-group">
+        <label class="form-label">Valor da sessão (R$)</label>
+        <input type="number" id="complete-amount" class="form-input" placeholder="Ex: 150,00" min="0" step="0.01" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Chave PIX (opcional)</label>
+        <input type="text" id="complete-pix" class="form-input" placeholder="CPF, e-mail ou telefone" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observações da sessão (opcional)</label>
+        <textarea id="complete-notes" class="form-input form-textarea" placeholder="Anotações sobre a sessão..."></textarea>
+      </div>
+    `,
+    onConfirm: async () => {
+      const amount = document.getElementById('complete-amount').value;
+      const notes = document.getElementById('complete-notes').value.trim();
+      const pix_key = document.getElementById('complete-pix').value.trim();
+      try {
+        await apiFetch(`/schedule/appointments/${id}/complete`, {
+          method: 'POST',
+          body: JSON.stringify({ amount: amount ? Number(amount) : null, notes: notes || null, pix_key: pix_key || null }),
+        });
+        notify('Sessão concluída! Pagamento criado no financeiro.', 'success');
+        const blockBtn = document.getElementById('btn-block-day');
+        if (blockBtn.dataset.date) loadDay(new Date(blockBtn.dataset.date + 'T12:00:00'));
+      } catch { notify('Erro ao concluir sessão.', 'error'); }
+    },
+  });
 };
 
 init();

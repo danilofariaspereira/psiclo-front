@@ -43,9 +43,9 @@ async function loadClients() {
         <td>${c.email || '—'}</td>
         <td>${c.birth_date ? new Date(c.birth_date).toLocaleDateString('pt-BR') : '—'}</td>
         <td><span class="badge ${c.active ? 'badge--converted' : 'badge--lost'}">${c.active ? 'Ativo' : 'Inativo'}</span></td>
-        <td>
+        <td style="white-space:nowrap">
           <button class="btn btn--primary btn--sm" onclick="openClientHistory('${c.id}','${c.name}')">Histórico</button>
-          <button class="btn btn--sm btn--ghost" onclick="deleteClient('${c.id}','${c.name}')">Remover</button>
+          <button class="btn btn--ghost btn--sm" onclick="deleteClient('${c.id}','${c.name}')">Remover</button>
         </td>
       </tr>
     `).join('');
