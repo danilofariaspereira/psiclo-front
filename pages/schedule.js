@@ -268,7 +268,7 @@ function renderAppts(appts, dateStr) {
       <div class="appt-card__client">${esc(a.clients?.name) || '—'}</div>
       <div class="appt-card__modality">${a.modality === 'online' ? '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Online' : '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Presencial'}</div>
       ${a.notes ? `
-        <button class="btn btn--ghost btn--sm" style="font-size:.72rem;padding:3px 8px;margin-top:2px" onclick="viewApptNotes('${esc(a.id)}','${esc(a.clients?.name ?? '')}',\`${esc(a.notes)}\`)">
+        <button class="btn btn--ghost btn--sm" style="font-size:.72rem;padding:3px 8px;margin-top:2px" data-appt-id="${esc(a.id)}" data-appt-name="${esc(a.clients?.name ?? '')}" data-appt-notes="${esc(a.notes)}" onclick="viewApptNotes(this.dataset.apptId, this.dataset.apptName, this.dataset.apptNotes)">
           <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           Ver observação
         </button>` : `<span style="font-size:.72rem;color:var(--color-text-muted);font-style:italic">Sem observação.</span>`}
@@ -276,6 +276,11 @@ function renderAppts(appts, dateStr) {
         ${a.status !== 'completed' && a.status !== 'cancelled' ? `
           <button class="btn btn--primary btn--sm" onclick="openCompleteModal('${esc(a.id)}','${esc(a.clients?.name ?? '')}')">Concluir</button>
           <button class="btn btn--ghost btn--sm" onclick="cancelAppt('${esc(a.id)}')">Cancelar</button>
+        ` : a.status === 'completed' ? `
+          <button class="btn btn--ghost btn--sm" onclick="openEditCompletedModal('${esc(a.id)}','${esc(a.clients?.name ?? '')}')">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Editar
+          </button>
         ` : ''}
       </div>
     </div>
@@ -341,6 +346,59 @@ window.viewApptNotes = (id, clientName, notes) => {
     title: `Observação — ${clientName}`,
     content: `<p style="white-space:pre-wrap;line-height:1.6">${esc(notes)}</p>`,
     hideFooter: true,
+  });
+};
+
+window.openEditCompletedModal = async (id, clientName) => {
+  // Busca o pagamento vinculado ao agendamento
+  let currentAmount = '';
+  let currentNotes = '';
+  let paymentId = null;
+  try {
+    const payments = await apiFetch('/financial/payments?status=paid');
+    const linked = (payments || []).find(p => p.appointment_id === id);
+    if (linked) {
+      paymentId = linked.id;
+      currentAmount = linked.amount;
+      // Remove prefixo [método] das notes
+      currentNotes = (linked.notes || '').replace(/^\[[^\]]+\]\s*/, '');
+    }
+  } catch (_) {}
+
+  Modal.open({
+    title: `Editar sessão — ${clientName}`,
+    confirmLabel: 'Salvar alterações',
+    content: `
+      <div class="form-group">
+        <label class="form-label">Valor da sessão (R$)</label>
+        <input type="number" id="edit-amount" class="form-input" value="${currentAmount}" min="0" step="0.01" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observações da sessão</label>
+        <textarea id="edit-notes" class="form-input form-textarea" placeholder="Anotações sobre a sessão...">${esc(currentNotes)}</textarea>
+      </div>
+    `,
+    onConfirm: async () => {
+      const amount = document.getElementById('edit-amount').value;
+      const notes = document.getElementById('edit-notes').value.trim();
+      try {
+        // Atualiza observação no agendamento
+        await apiFetch(`/schedule/appointments/${id}/notes`, {
+          method: 'PATCH',
+          body: JSON.stringify({ notes: notes || null }),
+        });
+        // Atualiza valor no pagamento se existir
+        if (paymentId && amount) {
+          await apiFetch(`/financial/payments/${paymentId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ amount: Number(amount) }),
+          });
+        }
+        notify.success('Sessão atualizada!');
+        const blockBtn = document.getElementById('btn-block-day');
+        if (blockBtn.dataset.date) loadDay(new Date(blockBtn.dataset.date + 'T12:00:00'));
+      } catch { notify.error('Erro ao atualizar sessão.'); }
+    },
   });
 };
 

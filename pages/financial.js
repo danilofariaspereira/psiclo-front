@@ -30,6 +30,8 @@ async function init() {
   document.getElementById('btn-add-expense').addEventListener('click', openAddExpenseModal);
   document.getElementById('btn-set-goal').addEventListener('click', openSetGoalModal);
   document.getElementById('btn-filter-payments').addEventListener('click', loadPayments);
+  // Filtro em tempo real ao digitar nome do cliente
+  document.getElementById('filter-client')?.addEventListener('input', loadPayments);
 }
 
 async function loadAll() {

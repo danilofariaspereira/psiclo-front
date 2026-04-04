@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="../styles/variables.css" />
   <link rel="stylesheet" href="../styles/components.css" />
   <link rel="stylesheet" href="../styles/layout.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <div class="app-layout">
@@ -28,6 +29,24 @@
             <option value="converted">Convertidos</option>
             <option value="lost">Perdidos</option>
           </select>
+        </div>
+      </div>
+
+      <!-- Gráficos -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+        <div class="card">
+          <p class="card__title">Conversão de leads</p>
+          <p style="font-size:.75rem;color:var(--color-text-muted);margin-bottom:.75rem">Proporção entre pendentes e convertidos.</p>
+          <div style="position:relative;height:180px">
+            <canvas id="chart-conversion"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <p class="card__title">Origem dos leads</p>
+          <p style="font-size:.75rem;color:var(--color-text-muted);margin-bottom:.75rem">De onde vieram seus leads.</p>
+          <div style="position:relative;height:180px">
+            <canvas id="chart-source"></canvas>
+          </div>
         </div>
       </div>
 
