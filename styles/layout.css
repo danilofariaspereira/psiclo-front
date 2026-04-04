@@ -464,3 +464,53 @@
 }
 #notif-toggle:checked { background: #16a34a; }
 #notif-toggle:checked::after { left: 18px; }
+
+/* ── Abas do dashboard ── */
+.dash-tabs {
+  display: flex;
+  gap: .4rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: .5rem;
+}
+.dash-tab {
+  padding: .45rem 1rem;
+  border-radius: 6px 6px 0 0;
+  border: none;
+  background: none;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color .2s, background .2s;
+}
+.dash-tab:hover { color: var(--color-text); background: var(--color-bg); }
+.dash-tab--active {
+  color: #1a237e;
+  background: #fff;
+  border: 2px solid var(--color-border);
+  border-bottom: 2px solid #fff;
+  margin-bottom: -2px;
+}
+
+/* ── Botões de filtro de mês ── */
+.dash-filter-btn {
+  padding: .3rem .7rem;
+  border-radius: 20px;
+  border: 1.5px solid var(--color-border);
+  background: #fff;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.dash-filter-btn:hover { border-color: #0288d1; color: #0288d1; }
+.dash-filter-btn--active { background: #1a237e; color: #fff; border-color: #1a237e; }
+
+/* ── Subtítulo dos stat cards ── */
+.stat-card__sub {
+  font-size: .68rem;
+  color: var(--color-text-muted);
+  margin-top: .15rem;
+}

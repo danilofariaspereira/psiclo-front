@@ -11,69 +11,103 @@
   <link rel="stylesheet" href="../styles/variables.css" />
   <link rel="stylesheet" href="../styles/components.css" />
   <link rel="stylesheet" href="../styles/layout.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <div class="app-layout">
-
     <aside class="sidebar" id="sidebar" aria-label="Menu lateral"></aside>
-
     <header class="app-header" id="app-header"></header>
-
     <main class="app-main" id="main-content">
 
-      <!-- Stats -->
-      <div class="stats-grid" id="stats-grid">
-        <div class="stat-card">
-          <p class="stat-card__label">Leads novos</p>
-          <p class="stat-card__value" id="stat-leads">—</p>
+      <!-- Abas -->
+      <div class="dash-tabs">
+        <button class="dash-tab dash-tab--active" data-tab="overview">Visão geral</button>
+        <button class="dash-tab" data-tab="heatmap">Mapa de calor</button>
+        <button class="dash-tab" data-tab="payments">Mapa de pagamentos</button>
+      </div>
+
+      <!-- ABA: Visão geral -->
+      <div id="tab-overview">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <p class="stat-card__label">Agendados hoje</p>
+            <p class="stat-card__value" id="stat-today">—</p>
+            <p class="stat-card__sub">Clientes esperados hoje</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-card__label">Concluídos hoje</p>
+            <p class="stat-card__value" id="stat-completed">—</p>
+            <p class="stat-card__sub">Atendimentos finalizados</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-card__label">Faturamento de hoje</p>
+            <p class="stat-card__value stat-card__value--green" id="stat-today-revenue">—</p>
+            <p class="stat-card__sub">Somente atendimentos concluídos hoje</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-card__label">Faturamento do mês</p>
+            <p class="stat-card__value stat-card__value--green" id="stat-paid">—</p>
+            <p class="stat-card__sub">Somente atendimentos concluídos no mês</p>
+          </div>
         </div>
-        <div class="stat-card">
-          <p class="stat-card__label">Clientes ativos</p>
-          <p class="stat-card__value" id="stat-clients">—</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+          <div class="card">
+            <p class="card__title">Faturamento diário (mês atual)</p>
+            <p style="font-size:.75rem;color:var(--color-text-muted);margin-bottom:.75rem">Linha suave mostrando os dias fortes e fracos do mês.</p>
+            <canvas id="chart-daily" height="160"></canvas>
+          </div>
+          <div class="card">
+            <p class="card__title">Resumo do mês</p>
+            <p style="font-size:.75rem;color:var(--color-text-muted);margin-bottom:.75rem">Relação entre faturamento e despesas para calcular o lucro.</p>
+            <canvas id="chart-summary" height="160"></canvas>
+          </div>
         </div>
-        <div class="stat-card">
-          <p class="stat-card__label">Sessões hoje</p>
-          <p class="stat-card__value" id="stat-today">—</p>
-        </div>
-        <div class="stat-card">
-          <p class="stat-card__label">Recebido (mês)</p>
-          <p class="stat-card__value stat-card__value--green" id="stat-paid">—</p>
-        </div>
-        <div class="stat-card">
-          <p class="stat-card__label">Pendente</p>
-          <p class="stat-card__value stat-card__value--yellow" id="stat-pending">—</p>
-        </div>
-        <div class="stat-card">
-          <p class="stat-card__label">Vencido</p>
-          <p class="stat-card__value stat-card__value--red" id="stat-overdue">—</p>
+
+        <div class="card">
+          <p class="card__title">Sessões de hoje</p>
+          <div class="table-wrapper">
+            <table class="table">
+              <thead><tr><th>Horário</th><th>Cliente</th><th>Modalidade</th><th>Status</th></tr></thead>
+              <tbody id="upcoming-body">
+                <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Próximas sessões -->
-      <div class="card">
-        <p class="card__title">Próximas sessões</p>
-        <div class="table-wrapper">
-          <table class="table" id="upcoming-table">
-            <thead>
-              <tr>
-                <th>Horário</th>
-                <th>Cliente</th>
-                <th>Modalidade</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="upcoming-body">
-              <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Carregando...</td></tr>
-            </tbody>
-          </table>
+      <!-- ABA: Mapa de calor -->
+      <div id="tab-heatmap" style="display:none">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+            <p class="card__title" style="margin:0">Horários mais movimentados</p>
+            <div style="display:flex;gap:.4rem;flex-wrap:wrap" id="heatmap-months"></div>
+          </div>
+          <div id="heatmap-container" style="overflow-x:auto"></div>
+          <div style="display:flex;align-items:center;gap:.4rem;margin-top:.75rem;font-size:.72rem;color:var(--color-text-muted)">
+            <span>Menos</span>
+            <span style="display:flex;gap:3px">
+              <span style="width:14px;height:14px;border-radius:3px;background:#f0f4f8;border:1px solid #dde1e7;display:inline-block"></span>
+              <span style="width:14px;height:14px;border-radius:3px;background:#c8e6c9;display:inline-block"></span>
+              <span style="width:14px;height:14px;border-radius:3px;background:#81c784;display:inline-block"></span>
+              <span style="width:14px;height:14px;border-radius:3px;background:#ffa726;display:inline-block"></span>
+              <span style="width:14px;height:14px;border-radius:3px;background:#ef5350;display:inline-block"></span>
+            </span>
+            <span>Mais</span>
+          </div>
         </div>
+      </div>
+
+      <!-- ABA: Mapa de pagamentos -->
+      <div id="tab-payments" style="display:none">
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem" id="paymap-months"></div>
+        <div id="paymap-container"></div>
       </div>
 
     </main>
   </div>
-
   <div id="toast-container" aria-live="polite"></div>
-
   <script type="module" src="../pages/dashboard.js"></script>
 </body>
 </html>
