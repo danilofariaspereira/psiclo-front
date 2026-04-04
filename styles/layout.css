@@ -522,7 +522,7 @@
 /* ── Subtítulo dos stat cards ── */
 .stat-card__sub {
   font-size: .68rem;
-  color: var(--color-text-muted);
+  color: rgba(255,255,255,.65);
   margin-top: .15rem;
 }
 

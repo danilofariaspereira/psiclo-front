@@ -1,4 +1,4 @@
-import { authService } from '../services/auth.service.js';
+﻿import { authService } from '../services/auth.service.js';
 import { renderSidebar } from '../components/Sidebar.js';
 import { renderHeader } from '../components/Header.js';
 import { store } from '../state/store.js';
@@ -237,8 +237,8 @@ async function loadCharts() {
         labels: Array.from({ length: daysInMonth }, (_, i) => i + 1),
         datasets: [{
           data: dailyTotals,
-          borderColor: '#0288d1',
-          backgroundColor: 'rgba(2,136,209,0.08)',
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34,197,94,0.12)',
           fill: true,
           tension: 0.4,
           pointRadius: 2,
@@ -250,7 +250,7 @@ async function loadCharts() {
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { ticks: { font: { size: 10 } } },
+          x: { ticks: { color: 'rgba(255,255,255,.7)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.1)' } },
           y: { ticks: { callback: v => `R$${v}`, font: { size: 10 } } },
         },
       },
@@ -269,7 +269,7 @@ async function loadCharts() {
         labels: ['Lucro', 'Despesas'],
         datasets: [{
           data: [profit || 0.001, totalExpenses || 0.001],
-          backgroundColor: ['#0288d1', 'rgba(0,0,0,0.08)'],
+          backgroundColor: ['#22c55e', 'rgba(255,255,255,0.15)'],
           borderWidth: 0,
         }],
       },
@@ -288,7 +288,7 @@ async function loadCharts() {
           const { ctx, width, height } = chart;
           ctx.save();
           ctx.font = 'bold 1.2rem Inter,sans-serif';
-          ctx.fillStyle = '#1a237e';
+          ctx.fillStyle = '#fff';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(`${pct}%`, width / 2, height / 2);
