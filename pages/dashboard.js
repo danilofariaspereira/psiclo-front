@@ -27,6 +27,13 @@ function todayBR() {
 }
 
 // ── Notificação ──────────────────────────────────────────────
+// Solicita permissão de notificação do browser na primeira interação
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
 function playNotificationSound() {
   try {
     const ctx = new AudioContext();
@@ -43,11 +50,20 @@ function playNotificationSound() {
 
 function showNotification(title, subtitle = '') {
   if (!getNotifPref()) return;
+
+  // Tenta notificação nativa do browser (funciona mesmo com aba em segundo plano)
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body: subtitle, icon: '../img/fiveicon.png' });
+  }
+
+  // Toast visual sempre aparece
   playNotificationSound();
   const el = document.createElement('div');
   el.className = 'appt-toast';
   el.innerHTML = `
-    <div class="appt-toast__icon">📅</div>
+    <div class="appt-toast__icon">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    </div>
     <div class="appt-toast__body">
       <div class="appt-toast__title">${esc(title)}</div>
       ${subtitle ? `<div class="appt-toast__sub">${esc(subtitle)}</div>` : ''}
@@ -56,7 +72,7 @@ function showNotification(title, subtitle = '') {
   `;
   el.querySelector('.appt-toast__close').addEventListener('click', () => el.remove());
   document.body.appendChild(el);
-  setTimeout(() => { el.classList.add('appt-toast--hide'); setTimeout(() => el.remove(), 400); }, 6000);
+  setTimeout(() => { el.classList.add('appt-toast--hide'); setTimeout(() => el.remove(), 400); }, 8000);
 }
 
 // ── Init ─────────────────────────────────────────────────────
@@ -71,6 +87,7 @@ async function init() {
   setupTabs();
   await loadOverview();
   checkBirthdays();
+  requestNotifPermission(); // solicita permissão de notificação do browser
   startPolling();
 }
 
@@ -420,9 +437,10 @@ window.switchPayMonth = (month) => loadPaymentMap(month);
 
 // ── Polling ───────────────────────────────────────────────────
 function startPolling() {
+  // Inicializa com dados atuais
   Promise.all([
     apiFetch('/leads?status=new').catch(() => []),
-    apiFetch(`/schedule/appointments?date=${todayBR()}`).catch(() => []),
+    apiFetch('/schedule/appointments').catch(() => []),
   ]).then(([leads, appts]) => {
     lastLeadCount = leads?.length ?? 0;
     lastApptCount = appts?.length ?? 0;
@@ -430,25 +448,30 @@ function startPolling() {
 
   pollingInterval = setInterval(async () => {
     try {
-      const today = todayBR();
-      const [leads, todayAppts] = await Promise.all([
+      const [leads, allAppts] = await Promise.all([
         apiFetch('/leads?status=new'),
-        apiFetch(`/schedule/appointments?date=${today}`),
+        apiFetch('/schedule/appointments'),
       ]);
       const newLeadCount = leads?.length ?? 0;
-      const newApptCount = todayAppts?.length ?? 0;
+      const newApptCount = allAppts?.length ?? 0;
 
       if (newLeadCount > lastLeadCount) {
         showNotification('Novo lead recebido!', esc(leads[0]?.name || ''));
         loadStats();
       }
       if (newApptCount > lastApptCount) {
-        const newest = todayAppts[todayAppts.length - 1];
+        const newest = allAppts[allAppts.length - 1];
         const clientName = newest?.clients?.name || '';
         const time = newest?.scheduled_at
           ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
           : '';
-        showNotification(`Novo agendamento — ${esc(clientName)}`, time ? `Horário: ${time}` : '');
+        const date = newest?.scheduled_at
+          ? new Date(newest.scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' })
+          : '';
+        showNotification(
+          `Novo agendamento — ${esc(clientName)}`,
+          date && time ? `${date} às ${time}` : ''
+        );
         loadUpcoming();
         loadStats();
       }
