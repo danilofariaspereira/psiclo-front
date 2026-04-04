@@ -254,7 +254,7 @@ function showChangePasswordModal() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ email: prof?.email, new_password: newPass }),
+      body: JSON.stringify({ new_password: newPass }),
     });
     const json = await res.json();
     btn.disabled = false; btn.textContent = 'Salvar';

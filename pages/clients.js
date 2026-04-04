@@ -10,9 +10,12 @@ const API = 'https://psiclo-back.vercel.app/api';
 let allClients = [];
 
 async function apiFetch(path, options = {}) {
-  const res = await fetch(`${API}${path}`, {
+  const sep = path.includes('?') ? '&' : '?';
+  const url = `${API}${path}${options.method && options.method !== 'GET' ? '' : `${sep}_=${Date.now()}`}`;
+  const res = await fetch(url, {
     ...options,
     credentials: 'include',
+    cache: 'no-store',
     headers: { 'Content-Type': 'application/json', ...options.headers },
   });
   if (!res.ok) throw new Error(`Erro ${res.status}`);
