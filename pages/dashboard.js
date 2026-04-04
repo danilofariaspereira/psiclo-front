@@ -15,7 +15,8 @@ let dailyChart = null;
 let summaryChart = null;
 
 async function apiFetch(path) {
-  const res = await fetch(`${API}${path}`, { credentials: 'include' });
+  const sep = path.includes('?') ? '&' : '?';
+  const res = await fetch(`${API}${path}${sep}_=${Date.now()}`, { credentials: 'include', cache: 'no-store' });
   if (!res.ok) throw new Error(`Erro ${res.status}`);
   return res.json();
 }
@@ -381,21 +382,15 @@ async function loadPaymentMap(month = null) {
     const qs = month ? `?year=${year}&month=${month}` : `?year=${year}`;
     const data = await apiFetch(`/financial/payment-map${qs}`);
 
-    const total = Object.values(data).reduce((s, v) => s + v.total, 0);
-    const totalCount = Object.values(data).reduce((s, v) => s + v.count, 0);
+    const total = Object.values(data.byMonth || {}).reduce((s, v) => s + v.total, 0);
+    const totalCount = Object.values(data.byMonth || {}).reduce((s, v) => s + v.count, 0);
+    const byMethod = data.byMethod || { pix: { total: 0, count: 0 }, dinheiro: { total: 0, count: 0 }, cartao: { total: 0, count: 0 } };
 
-    // Sempre mostrar os 3 métodos, mesmo sem dados
     const METHODS = [
       { key: 'pix',      label: 'PIX',      color: '#f59e0b', icon: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>' },
       { key: 'dinheiro', label: 'Dinheiro', color: '#10b981', icon: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>' },
       { key: 'cartao',   label: 'Cartão',   color: '#3b82f6', icon: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>' },
     ];
-
-    // Agrupa dados por método de pagamento (prefixo nas notes)
-    const byMethod = { pix: { total: 0, count: 0 }, dinheiro: { total: 0, count: 0 }, cartao: { total: 0, count: 0 } };
-    // Os dados do payment-map vêm por mês — para separar por método precisamos dos payments diretos
-    // Por ora distribui o total igualmente se não tiver breakdown por método
-    // TODO: quando o backend retornar breakdown por método, usar aqui
 
     container.innerHTML = `
       ${total > 0 ? `<div class="card" style="margin-bottom:.75rem"><p style="font-size:.82rem;color:var(--color-text-muted)">${totalCount} atendimento(s) · Total: ${currencyUtils.format(total)}</p></div>` : ''}
