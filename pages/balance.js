@@ -48,19 +48,16 @@ async function loadAll() {
   document.getElementById('b-profit').className = `stat-card__value ${profit >= 0 ? 'stat-card__value--green' : 'stat-card__value--red'}`;
   document.getElementById('b-goal').textContent = goal ? currencyUtils.format(goal) : 'Não definida';
 
-  renderGoalChart(profit, goal);
+  renderGoalChart(revenue, goal);
   renderBarChart(revenue, totalExpenses, goal);
 
   // Celebração se meta atingida
   if (goal > 0 && revenue >= goal) showGoalCelebration(revenue, goal);
 }
 
-function renderGoalChart(profit, goal) {
+function renderGoalChart(revenue, goal) {
   const ctx = document.getElementById('chart-goal');
   if (goalChart) goalChart.destroy();
-
-  const pct = goal > 0 ? Math.min(Math.round((profit / goal) * 100), 100) : 0;
-  const remaining = Math.max(goal - profit, 0);
 
   const msgEl = document.getElementById('goal-msg');
   if (!goal) {
@@ -76,13 +73,15 @@ function renderGoalChart(profit, goal) {
     msgEl.style.color = color;
   }
 
+  const pct = goal > 0 ? Math.min(Math.round((revenue / goal) * 100), 100) : 0;
+
   goalChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
       datasets: [{
         data: goal > 0 ? [Math.max(revenue, 0), Math.max(goal - revenue, 0)] : [0, 1],
         backgroundColor: [
-          revenue >= goal ? '#22c55e' : revenue / goal >= 0.8 ? '#f59e0b' : '#fff',
+          revenue >= goal ? '#22c55e' : (goal > 0 && revenue / goal >= 0.8) ? '#f59e0b' : '#fff',
           'rgba(255,255,255,0.15)'
         ],
         borderWidth: 0,
