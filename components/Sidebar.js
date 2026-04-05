@@ -140,11 +140,11 @@ export function renderSidebar(activePage) {
 let _globalPollingTimer = null;
 
 function startGlobalPolling() {
-  if (_globalPollingTimer) return;
+  if (window._psicloPollingTimer) return;
 
   const API = 'https://psiclo-back.vercel.app/api';
-  let lastEventAt = new Date(Date.now() - 60000).toISOString();
-  const notifiedIds = new Set(); // guarda IDs já notificados
+  // Começa do momento atual — só notifica agendamentos criados DEPOIS que a página abriu
+  let lastEventAt = new Date().toISOString();
 
   async function check() {
     try {
@@ -157,43 +157,32 @@ function startGlobalPolling() {
 
       if (!res.ok) return;
       const { appointments, leads, serverTime } = await res.json();
-
       lastEventAt = serverTime;
 
       if (!getNotifPref()) return;
 
-      // Novo agendamento — só notifica IDs ainda não vistos
       if (appointments?.length > 0) {
-        for (const a of appointments) {
-          if (notifiedIds.has(a.id)) continue;
-          notifiedIds.add(a.id);
-          const clientName = escHtml(a.clients?.name || '');
-          const dt = a.scheduled_at ? new Date(a.scheduled_at) : null;
-          const time = dt ? dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '';
-          const day = dt ? dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' }) : '';
-          showGlobalToast(clientName, day && time ? `${day} às ${time}` : '');
-          break; // um toast por ciclo
-        }
+        const a = appointments[0];
+        const clientName = escHtml(a.clients?.name || '');
+        const dt = a.scheduled_at ? new Date(a.scheduled_at) : null;
+        const time = dt ? dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '';
+        const day = dt ? dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' }) : '';
+        showGlobalToast(clientName, day && time ? `${day} às ${time}` : '');
       }
 
-      // Novo lead
       if (leads?.length > 0) {
-        for (const l of leads) {
-          if (notifiedIds.has(l.id)) continue;
-          notifiedIds.add(l.id);
-          showGlobalToast(escHtml(l.name || 'Novo lead'), escHtml(l.source || ''));
-          break;
-        }
+        const l = leads[0];
+        showGlobalToast(escHtml(l.name || 'Novo lead'), escHtml(l.source || ''));
       }
-
     } catch (e) {
       console.warn('[psiclo notifications]', e.message);
     }
   }
 
   setTimeout(check, 3000);
-  _globalPollingTimer = setInterval(check, 10000);
+  window._psicloPollingTimer = setInterval(check, 10000);
 }
+
 
 function escHtml(str) {
   if (!str) return '';
