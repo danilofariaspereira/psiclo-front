@@ -159,12 +159,15 @@ function startGlobalPolling() {
       if (!res.ok) return;
       const { appointments, leads, serverTime } = await res.json();
 
-      // Atualiza o timestamp para o próximo check
-      lastEventAt = serverTime;
+      // Atualiza o timestamp para DEPOIS do evento mais recente processado
+      let newLastEventAt = serverTime;
+      if (appointments?.length > 0) newLastEventAt = appointments[0].created_at;
+      else if (leads?.length > 0) newLastEventAt = leads[0].created_at;
+      lastEventAt = newLastEventAt;
 
       if (!getNotifPref()) return;
 
-      // Novo agendamento
+      // Novo agendamento — mostra apenas o mais recente
       if (appointments?.length > 0) {
         const a = appointments[0];
         const clientName = escHtml(a.clients?.name || '');
@@ -174,7 +177,7 @@ function startGlobalPolling() {
         showGlobalToast(`📅 Novo agendamento — ${clientName}`, time ? `Hoje às ${time}` : '');
       }
 
-      // Novo lead
+      // Novo lead — mostra apenas o mais recente
       if (leads?.length > 0) {
         const l = leads[0];
         showGlobalToast(`🔔 Novo lead — ${escHtml(l.name || '')}`, escHtml(l.source || ''));

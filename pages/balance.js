@@ -66,20 +66,25 @@ function renderGoalChart(profit, goal) {
   if (!goal) {
     msgEl.textContent = 'Defina uma meta em Financeiro.';
     msgEl.style.color = 'rgba(255,255,255,.7)';
-  } else if (profit >= goal) {
-    msgEl.textContent = `Meta atingida! +${currencyUtils.format(profit - goal)}`;
+  } else if (revenue >= goal) {
+    msgEl.textContent = `Meta atingida! +${currencyUtils.format(revenue - goal)}`;
     msgEl.style.color = '#a5f3c0';
   } else {
-    msgEl.textContent = `${pct}% — faltam ${currencyUtils.format(remaining)}`;
-    msgEl.style.color = 'rgba(255,255,255,.85)';
+    const pctGoal = Math.round((revenue / goal) * 100);
+    const color = pctGoal >= 80 ? '#fde68a' : 'rgba(255,255,255,.85)';
+    msgEl.textContent = `${pctGoal}% — faltam ${currencyUtils.format(goal - revenue)}`;
+    msgEl.style.color = color;
   }
 
   goalChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
       datasets: [{
-        data: goal > 0 ? [Math.max(profit, 0), remaining] : [0, 1],
-        backgroundColor: ['#fff', 'rgba(255,255,255,0.15)'],
+        data: goal > 0 ? [Math.max(revenue, 0), Math.max(goal - revenue, 0)] : [0, 1],
+        backgroundColor: [
+          revenue >= goal ? '#22c55e' : revenue / goal >= 0.8 ? '#f59e0b' : '#fff',
+          'rgba(255,255,255,0.15)'
+        ],
         borderWidth: 0,
       }],
     },
