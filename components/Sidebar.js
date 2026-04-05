@@ -143,12 +143,11 @@ function startGlobalPolling() {
   if (_globalPollingTimer) return;
 
   const API = 'https://psiclo-back.vercel.app/api';
-  // Começa com 60s atrás para pegar eventos recentes ao abrir
   let lastEventAt = new Date(Date.now() - 60000).toISOString();
+  const notifiedIds = new Set(); // guarda IDs já notificados
 
   async function check() {
     try {
-      // POST nunca é cacheado por CDN/proxy — solução definitiva para o 304
       const res = await fetch(`${API}/notifications/check`, {
         method: 'POST',
         credentials: 'include',
@@ -159,28 +158,32 @@ function startGlobalPolling() {
       if (!res.ok) return;
       const { appointments, leads, serverTime } = await res.json();
 
-      // Atualiza o timestamp para DEPOIS do evento mais recente processado
-      let newLastEventAt = serverTime;
-      if (appointments?.length > 0) newLastEventAt = appointments[0].created_at;
-      else if (leads?.length > 0) newLastEventAt = leads[0].created_at;
-      lastEventAt = newLastEventAt;
+      lastEventAt = serverTime;
 
       if (!getNotifPref()) return;
 
-      // Novo agendamento — mostra apenas o mais recente
+      // Novo agendamento — só notifica IDs ainda não vistos
       if (appointments?.length > 0) {
-        const a = appointments[0];
-        const clientName = escHtml(a.clients?.name || '');
-        const time = a.scheduled_at
-          ? new Date(a.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
-          : '';
-        showGlobalToast(`📅 Novo agendamento — ${clientName}`, time ? `Hoje às ${time}` : '');
+        for (const a of appointments) {
+          if (notifiedIds.has(a.id)) continue;
+          notifiedIds.add(a.id);
+          const clientName = escHtml(a.clients?.name || '');
+          const dt = a.scheduled_at ? new Date(a.scheduled_at) : null;
+          const time = dt ? dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '';
+          const day = dt ? dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' }) : '';
+          showGlobalToast(clientName, day && time ? `${day} às ${time}` : '');
+          break; // um toast por ciclo
+        }
       }
 
-      // Novo lead — mostra apenas o mais recente
+      // Novo lead
       if (leads?.length > 0) {
-        const l = leads[0];
-        showGlobalToast(`🔔 Novo lead — ${escHtml(l.name || '')}`, escHtml(l.source || ''));
+        for (const l of leads) {
+          if (notifiedIds.has(l.id)) continue;
+          notifiedIds.add(l.id);
+          showGlobalToast(escHtml(l.name || 'Novo lead'), escHtml(l.source || ''));
+          break;
+        }
       }
 
     } catch (e) {
@@ -188,9 +191,8 @@ function startGlobalPolling() {
     }
   }
 
-  // Primeira checagem após 3s (aguarda interação do usuário para AudioContext)
   setTimeout(check, 3000);
-  _globalPollingTimer = setInterval(check, 10000); // 10s
+  _globalPollingTimer = setInterval(check, 10000);
 }
 
 function escHtml(str) {
@@ -233,7 +235,6 @@ function playPlin() {
 
 function showGlobalToast(title, subtitle = '') {
   playPlin();
-
   const el = document.createElement('div');
   el.className = 'appt-toast';
   el.innerHTML = `
