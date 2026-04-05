@@ -111,9 +111,12 @@ export function renderSidebar(activePage) {
   // Toggle de notificações — inicializa AudioContext na interação do usuário
   document.getElementById('notif-toggle').addEventListener('change', (e) => {
     setNotifPref(e.target.checked);
-    // Inicializa AudioContext aqui para garantir que o browser libera o áudio
     if (e.target.checked) getAudioCtx();
   });
+
+  // Inicializa AudioContext no primeiro clique em qualquer lugar da página
+  const initAudioOnce = () => { getAudioCtx(); document.removeEventListener('click', initAudioOnce); };
+  document.addEventListener('click', initAudioOnce);
 
   // Polling global de agendamentos — funciona em qualquer página
   startGlobalPolling();
@@ -203,18 +206,25 @@ function getAudioCtx() {
 function playPlin() {
   try {
     const ctx = getAudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(1046, ctx.currentTime);       // C6
-    osc.frequency.setValueAtTime(1318, ctx.currentTime + 0.1); // E6
-    osc.frequency.setValueAtTime(1568, ctx.currentTime + 0.2); // G6
-    gain.gain.setValueAtTime(0.4, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.6);
+    // Nota 1
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.connect(gain1); gain1.connect(ctx.destination);
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(1046, ctx.currentTime);
+    gain1.gain.setValueAtTime(0.35, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc1.start(ctx.currentTime); osc1.stop(ctx.currentTime + 0.3);
+    // Nota 2
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2); gain2.connect(ctx.destination);
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1318, ctx.currentTime + 0.15);
+    gain2.gain.setValueAtTime(0.001, ctx.currentTime + 0.15);
+    gain2.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.25);
+    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+    osc2.start(ctx.currentTime + 0.15); osc2.stop(ctx.currentTime + 0.55);
   } catch (_) {}
 }
 
