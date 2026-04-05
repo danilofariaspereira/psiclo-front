@@ -165,9 +165,13 @@ function startGlobalPolling() {
         const a = appointments[0];
         const clientName = escHtml(a.clients?.name || '');
         const dt = a.scheduled_at ? new Date(a.scheduled_at) : null;
+        const WEEKDAYS_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const dtBR = dt ? new Date(dt.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' })) : null;
+        const weekday = dtBR ? WEEKDAYS_SHORT[dtBR.getDay()] : '';
+        const day = dtBR ? String(dtBR.getDate()).padStart(2, '0') : '';
         const time = dt ? dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '';
-        const day = dt ? dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' }) : '';
-        showGlobalToast(clientName, day && time ? `${day} às ${time}` : '');
+        const subtitle = weekday && day && time ? `${weekday} ${day} às ${time}` : '';
+        showGlobalToast(clientName, subtitle);
       }
 
       if (leads?.length > 0) {
@@ -219,6 +223,16 @@ function playPlin() {
     gain2.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.25);
     gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
     osc2.start(ctx.currentTime + 0.15); osc2.stop(ctx.currentTime + 0.55);
+
+    // Voz: fala "Agendamento" após o plim
+    if ('speechSynthesis' in window) {
+      const utter = new SpeechSynthesisUtterance('Agendamento');
+      utter.lang = 'pt-BR';
+      utter.volume = 0.9;
+      utter.rate = 0.95;
+      utter.pitch = 1.1;
+      setTimeout(() => window.speechSynthesis.speak(utter), 600);
+    }
   } catch (_) {}
 }
 
@@ -227,7 +241,9 @@ function showGlobalToast(title, subtitle = '') {
   const el = document.createElement('div');
   el.className = 'appt-toast';
   el.innerHTML = `
-    <div class="appt-toast__icon">📅</div>
+    <div class="appt-toast__icon">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    </div>
     <div class="appt-toast__body">
       <div class="appt-toast__title">${title}</div>
       ${subtitle ? `<div class="appt-toast__sub">${subtitle}</div>` : ''}

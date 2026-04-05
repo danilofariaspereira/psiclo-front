@@ -5,7 +5,6 @@ import { store } from '../state/store.js';
 import { currencyUtils } from '../utils/currency.js';
 import { dateUtils } from '../utils/date.js';
 import { esc } from '../utils/sanitize.js';
-import { getNotifPref } from '../components/Sidebar.js';
 
 const API = 'https://psiclo-back.vercel.app/api';
 let lastLeadCount = 0;
@@ -27,55 +26,6 @@ function todayBR() {
     .split('/').reverse().join('-');
 }
 
-// ── Notificação ──────────────────────────────────────────────
-// Solicita permissão de notificação do browser na primeira interação
-function requestNotifPermission() {
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
-}
-
-function playNotificationSound() {
-  try {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
-  } catch (_) {}
-}
-
-function showNotification(title, subtitle = '') {
-  if (!getNotifPref()) return;
-
-  // Tenta notificação nativa do browser (funciona mesmo com aba em segundo plano)
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification(title, { body: subtitle, icon: '../img/fiveicon.png' });
-  }
-
-  // Toast visual sempre aparece
-  playNotificationSound();
-  const el = document.createElement('div');
-  el.className = 'appt-toast';
-  el.innerHTML = `
-    <div class="appt-toast__icon">
-      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    </div>
-    <div class="appt-toast__body">
-      <div class="appt-toast__title">${esc(title)}</div>
-      ${subtitle ? `<div class="appt-toast__sub">${esc(subtitle)}</div>` : ''}
-    </div>
-    <button class="appt-toast__close" aria-label="Fechar">×</button>
-  `;
-  el.querySelector('.appt-toast__close').addEventListener('click', () => el.remove());
-  document.body.appendChild(el);
-  setTimeout(() => { el.classList.add('appt-toast--hide'); setTimeout(() => el.remove(), 400); }, 8000);
-}
-
 // ── Init ─────────────────────────────────────────────────────
 async function init() {
   const session = await authService.getSession();
@@ -88,7 +38,6 @@ async function init() {
   setupTabs();
   await loadOverview();
   checkBirthdays();
-  requestNotifPermission(); // solicita permissão de notificação do browser
   startPolling();
 }
 
@@ -426,8 +375,8 @@ async function loadPaymentMap(month = null) {
 window.switchPayMonth = (month) => loadPaymentMap(month);
 
 // ── Polling ───────────────────────────────────────────────────
-// O polling de agendamentos já roda no Sidebar.js (global, todas as páginas).
-// Aqui só atualizamos os stats quando a página está aberta.
+// O polling de notificações já roda no Sidebar.js (global, todas as páginas).
+// Aqui só atualizamos os stats/tabela quando a página está aberta.
 function startPolling() {
   pollingInterval = setInterval(async () => {
     try {
@@ -440,12 +389,11 @@ function startPolling() {
       const newLeadCount = leads?.length ?? 0;
       const newApptCount = todayAppts?.length ?? 0;
 
-      if (newLeadCount > lastLeadCount) {
+      if (newLeadCount > lastLeadCount || newApptCount > lastApptCount) {
         loadStats();
       }
       if (newApptCount > lastApptCount) {
         loadUpcoming();
-        loadStats();
       }
       lastLeadCount = newLeadCount;
       lastApptCount = newApptCount;

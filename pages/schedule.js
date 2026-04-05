@@ -7,7 +7,6 @@ import { notify } from '../utils/notify.js';
 import { dateUtils } from '../utils/date.js';
 import { store } from '../state/store.js';
 import { esc } from '../utils/sanitize.js';
-import { getNotifPref } from '../components/Sidebar.js';
 
 const API = 'https://psiclo-back.vercel.app/api';
 let scheduleConfig = null;
@@ -65,7 +64,7 @@ async function init() {
   document.getElementById('btn-new-appt').addEventListener('click', openNewApptModal);
   document.getElementById('btn-config').addEventListener('click', openConfigModal);
 
-  // Polling para notificar novos agendamentos vindos da landing page
+  // Polling para atualizar a view quando chegar novo agendamento (sem som — Sidebar.js cuida das notificações)
   try {
     const initial = await apiFetch(`/schedule/appointments?date=${todayBR()}`).catch(() => []);
     lastApptCount = initial?.length ?? 0;
@@ -77,12 +76,6 @@ async function init() {
       const appts = await apiFetch(`/schedule/appointments?date=${today}`);
       const count = appts?.length ?? 0;
       if (count > lastApptCount) {
-        const newest = appts[appts.length - 1];
-        const clientName = newest?.clients?.name || '';
-        const time = newest?.scheduled_at
-          ? new Date(newest.scheduled_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
-          : '';
-        showApptToast(`Novo agendamento — ${clientName}`, time ? `Horário: ${time}` : '');
         const blockBtn = document.getElementById('btn-block-day');
         if (blockBtn.dataset.date === today) loadDay(new Date(today + 'T12:00:00'));
       }
@@ -162,38 +155,6 @@ async function openConfigModal() {
       } catch { notify.error('Erro ao salvar.'); }
     },
   });
-}
-
-function showApptToast(title, subtitle = '') {
-  if (!getNotifPref()) return; // respeita preferência do usuário
-  try {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
-  } catch (_) {}
-
-  const el = document.createElement('div');
-  el.className = 'appt-toast';
-  el.innerHTML = `
-    <div class="appt-toast__icon">📅</div>
-    <div class="appt-toast__body">
-      <div class="appt-toast__title">${esc(title)}</div>
-      ${subtitle ? `<div class="appt-toast__sub">${esc(subtitle)}</div>` : ''}
-    </div>
-    <button class="appt-toast__close" aria-label="Fechar">×</button>
-  `;
-  el.querySelector('.appt-toast__close').addEventListener('click', () => el.remove());
-  document.body.appendChild(el);
-  setTimeout(() => {
-    el.classList.add('appt-toast--hide');
-    setTimeout(() => el.remove(), 400);
-  }, 6000);
 }
 
 async function loadDay(date) {
