@@ -252,17 +252,71 @@
 .slot--busy { background: #fde8e8; color: var(--color-error); border-color: #f5c6c6; cursor: not-allowed; opacity: .7; }
 
 /* ── MOBILE ── */
-.header__menu-toggle { display: none; font-size: 1.4rem; padding: 4px 8px; }
+.header__menu-toggle { display: none; }
+.header__logo-mobile { display: none; height: 28px; filter: brightness(0) invert(1); }
 
 @media (max-width: 768px) {
   .app-layout { grid-template-columns: 1fr; grid-template-rows: var(--header-height) 1fr; }
-  .sidebar { display: none; position: fixed; z-index: 200; width: var(--sidebar-width); }
+
+  /* Header mobile: azul gradiente, logo esquerda, hambúrguer direita */
+  .app-header {
+    grid-column: 1;
+    background: linear-gradient(135deg, #1a237e 0%, #1565c0 60%, #0288d1 100%);
+    border-bottom: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    padding: 0 var(--space-md);
+  }
+  .header__title-desktop { display: none; }
+  .header__logo-mobile { display: block; }
+  .header__profile--desktop { display: none; }
+  .header__menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    padding: 6px;
+    border-radius: 6px;
+  }
+  .header__menu-toggle:hover { background: rgba(255,255,255,.15); }
+
+  /* Sidebar: abre pela DIREITA */
+  .sidebar {
+    display: none;
+    position: fixed;
+    z-index: 200;
+    width: var(--sidebar-width);
+    top: 0;
+    right: 0;
+    left: auto;
+    height: 100vh;
+    box-shadow: -4px 0 24px rgba(0,0,0,.3);
+  }
   .sidebar--open { display: flex; }
-  .app-header { grid-column: 1; }
-  .app-main { grid-column: 1; padding: var(--space-md); }
-  .header__menu-toggle { display: block; }
+
+  .app-main { grid-column: 1; padding: var(--space-md); overflow-x: hidden; }
+
+  /* Schedule */
   .schedule-layout { grid-template-columns: 1fr; }
+
+  /* Stats: 2 colunas no mobile */
   .stats-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Gráficos: coluna única no mobile */
+  .dash-charts-grid { grid-template-columns: 1fr !important; }
+
+  /* Mapa de calor: scroll horizontal controlado */
+  .heatmap-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .heatmap-scroll table { min-width: 400px; }
+
+  /* Cards de pagamento: coluna única */
+  .paymap-methods { grid-template-columns: 1fr !important; }
+
+  /* Page header: empilha no mobile */
+  .page-header { flex-wrap: wrap; gap: .5rem; }
+  .page-header .btn { font-size: .78rem; padding: 7px 12px; }
 }
 
 /* ── Cards de agendamento ── */

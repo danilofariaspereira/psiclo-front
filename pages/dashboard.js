@@ -38,7 +38,7 @@ export async function mount(container) {
         <div class="stat-card"><p class="stat-card__label">Faturamento de hoje</p><p class="stat-card__value stat-card__value--green" id="stat-today-revenue">—</p><p class="stat-card__sub">Somente atendimentos concluídos hoje</p></div>
         <div class="stat-card"><p class="stat-card__label">Faturamento do mês</p><p class="stat-card__value stat-card__value--green" id="stat-paid">—</p><p class="stat-card__sub">Somente atendimentos concluídos no mês</p></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem" class="dash-charts-grid">
         <div class="card card--blue"><p class="card__title">Faturamento diário (mês atual)</p><p style="font-size:.75rem;color:rgba(255,255,255,.65);margin-bottom:.75rem">Linha suave mostrando os dias fortes e fracos do mês.</p><div style="position:relative;height:160px"><canvas id="chart-daily"></canvas></div></div>
         <div class="card card--blue"><p class="card__title">Resumo do mês</p><p style="font-size:.75rem;color:rgba(255,255,255,.65);margin-bottom:.75rem">Relação entre faturamento e despesas para calcular o lucro.</p><div style="max-width:160px;margin:0 auto;height:160px"><canvas id="chart-summary"></canvas></div></div>
       </div>
@@ -207,13 +207,13 @@ async function loadHeatmap(month = null) {
     if (!hours.length) { container.innerHTML = '<p style="color:rgba(255,255,255,.65);font-size:.85rem;padding:1rem">Nenhum atendimento concluído no período.</p>'; return; }
     const maxVal = Math.max(...Object.values(data), 1);
     const heatColor = v => { if (!v) return '#f0f4f8'; const p = v/maxVal; return p < 0.2 ? '#c8e6c9' : p < 0.4 ? '#81c784' : p < 0.7 ? '#ffa726' : '#ef5350'; };
-    let html = `<table style="border-collapse:collapse;width:100%;font-size:.75rem"><thead><tr><th style="padding:4px 8px;text-align:left;color:rgba(255,255,255,.65)">Hora</th>${DAYS_ORDER.map(d => `<th style="padding:4px 6px;text-align:center;color:rgba(255,255,255,.65);text-transform:uppercase">${d}</th>`).join('')}</tr></thead><tbody>`;
+    let html = `<div class="heatmap-scroll"><table style="border-collapse:collapse;width:100%;font-size:.75rem"><thead><tr><th style="padding:4px 8px;text-align:left;color:rgba(255,255,255,.65)">Hora</th>${DAYS_ORDER.map(d => `<th style="padding:4px 6px;text-align:center;color:rgba(255,255,255,.65);text-transform:uppercase">${d}</th>`).join('')}</tr></thead><tbody>`;
     hours.forEach(hour => {
       html += `<tr><td style="padding:3px 8px;color:rgba(255,255,255,.75);white-space:nowrap">${hour}</td>`;
       DAYS_ORDER.forEach(day => { const val = data[`${day}|${hour}`] || 0; html += `<td style="padding:3px 4px;text-align:center"><div title="${val} atendimento(s)" style="width:100%;height:22px;border-radius:4px;background:${heatColor(val)};display:flex;align-items:center;justify-content:center;font-size:.68rem;color:${val ? '#333' : 'transparent'}">${val || ''}</div></td>`; });
       html += '</tr>';
     });
-    container.innerHTML = html + '</tbody></table>';
+    container.innerHTML = html + '</tbody></table></div>';
   } catch (_) { container.innerHTML = '<p style="color:var(--color-error);font-size:.85rem">Erro ao carregar.</p>'; }
 }
 window.switchHeatmapMonth = (month) => loadHeatmap(month);
@@ -236,7 +236,7 @@ async function loadPaymentMap(month = null) {
     ];
     container.innerHTML = `
       ${total > 0 ? `<div class="card" style="margin-bottom:.75rem"><p style="font-size:.82rem;color:var(--color-text-muted)">${totalCount} atendimento(s) · Total: ${currencyUtils.format(total)}</p></div>` : ''}
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:.75rem">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:.75rem" class="paymap-methods">
         ${METHODS.map(m => { const v = byMethod[m.key] || {total:0,count:0}; const pct = total > 0 ? ((v.total/total)*100).toFixed(1) : 0; return `<div style="background:linear-gradient(135deg,#1a237e 0%,#1565c0 60%,#0288d1 100%);border-radius:var(--radius-md);padding:var(--space-md);box-shadow:var(--shadow-md)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem"><span style="color:${m.color};font-weight:700">${m.label}</span><span style="font-size:.78rem;color:${m.color};font-weight:700">${pct}%</span></div><p style="font-size:1.1rem;font-weight:700;color:#fff">${currencyUtils.format(v.total)}</p><p style="font-size:.75rem;color:rgba(255,255,255,.65)">${v.count} atend.</p><div style="height:4px;background:rgba(255,255,255,.2);border-radius:2px"><div style="height:4px;background:${m.color};border-radius:2px;width:${pct}%"></div></div></div>`; }).join('')}
       </div>
       <div style="text-align:right"><div style="display:inline-block;background:linear-gradient(135deg,#1a237e 0%,#1565c0 60%,#0288d1 100%);border-radius:var(--radius-md);padding:.5rem 1rem;box-shadow:var(--shadow-md)"><span style="font-size:.7rem;color:rgba(255,255,255,.75);font-weight:700;text-transform:uppercase;display:block">Total do período</span><p style="font-size:1.1rem;font-weight:700;color:#fff">${currencyUtils.format(total)}</p></div></div>`;

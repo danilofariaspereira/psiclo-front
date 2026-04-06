@@ -164,6 +164,7 @@ function renderAppts(appts, dateStr) {
       ${a.notes ? `<button class="btn btn--ghost btn--sm" style="font-size:.72rem;padding:3px 8px;margin-top:2px" onclick="viewApptNotes('${esc(a.id)}','${esc(a.clients?.name ?? '')}','${esc(a.notes)}')"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Ver observação</button>` : `<span style="font-size:.72rem;color:var(--color-text-muted);font-style:italic">Sem observação.</span>`}
       <div class="appt-card__actions">
         ${a.status !== 'completed' && a.status !== 'cancelled' ? `<button class="btn btn--primary btn--sm" onclick="openCompleteModal('${esc(a.id)}','${esc(a.clients?.name ?? '')}')">Concluir</button><button class="btn btn--ghost btn--sm" onclick="cancelAppt('${esc(a.id)}')">Cancelar</button>` : a.status === 'completed' ? `<button class="btn btn--ghost btn--sm" onclick="openEditCompletedModal('${esc(a.id)}','${esc(a.clients?.name ?? '')}')"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button>` : ''}
+        <button class="btn btn--danger btn--sm" onclick="deleteAppt('${esc(a.id)}')">Excluir</button>
       </div>
     </div>`).join('');
 }
@@ -225,6 +226,16 @@ window.cancelAppt = async (id) => {
     const blockBtn = document.getElementById('btn-block-day');
     if (blockBtn?.dataset.date) loadDay(new Date(blockBtn.dataset.date + 'T12:00:00'));
   } catch { notify.error('Erro ao cancelar.'); }
+};
+
+window.deleteAppt = async (id) => {
+  if (!confirm('Excluir este agendamento permanentemente? Esta ação não pode ser desfeita.')) return;
+  try {
+    await apiFetch(`/schedule/appointments/${id}`, { method: 'DELETE' });
+    notify.success('Agendamento excluído.');
+    const blockBtn = document.getElementById('btn-block-day');
+    if (blockBtn?.dataset.date) loadDay(new Date(blockBtn.dataset.date + 'T12:00:00'));
+  } catch { notify.error('Erro ao excluir.'); }
 };
 
 window.openCompleteModal = (id, clientName) => {
