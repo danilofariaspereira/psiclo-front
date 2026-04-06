@@ -43,9 +43,13 @@ async function init() {
   renderSidebar('schedule');
   renderHeader('Agenda');
 
-  // Carrega config para saber dias de trabalho
+  // Carrega config para saber dias de trabalho — usa cache de 5 min
   try {
-    scheduleConfig = await apiFetch('/schedule/config');
+    scheduleConfig = store.cache.get('schedule_config');
+    if (!scheduleConfig) {
+      scheduleConfig = await apiFetch('/schedule/config');
+      if (scheduleConfig) store.cache.set('schedule_config', scheduleConfig);
+    }
   } catch { scheduleConfig = null; }
 
   const unavailableDays = scheduleConfig
@@ -151,6 +155,7 @@ async function openConfigModal() {
             break_between: parseInt(document.getElementById('cfg-break').value),
           }),
         });
+        store.cache.del('schedule_config');
         notify.success('Horários salvos!');
       } catch { notify.error('Erro ao salvar.'); }
     },

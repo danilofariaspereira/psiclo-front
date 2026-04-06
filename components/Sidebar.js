@@ -183,7 +183,7 @@ function startGlobalPolling() {
     }
   }
 
-  setTimeout(check, 3000);
+  // Inicia polling imediatamente — sem setTimeout para evitar plim atrasado
   window._psicloPollingTimer = setInterval(check, 10000);
 }
 

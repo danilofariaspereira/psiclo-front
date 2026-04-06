@@ -38,11 +38,18 @@ async function init() {
 }
 
 async function loadAll() {
+  // expenses e goal mudam raramente — usa cache de 5 min
+  const cachedExpenses = store.cache.get('expenses');
+  const cachedGoal = store.cache.get('financial_goal');
+
   const [summary, expenses, goalData] = await Promise.all([
     apiFetch('/financial/summary').catch(() => ({ paid: 0 })),
-    apiFetch('/financial/expenses').catch(() => []),
-    apiFetch('/financial/goal').catch(() => ({ monthly_goal: 0 })),
+    cachedExpenses ? Promise.resolve(cachedExpenses) : apiFetch('/financial/expenses').catch(() => []),
+    cachedGoal ? Promise.resolve(cachedGoal) : apiFetch('/financial/goal').catch(() => ({ monthly_goal: 0 })),
   ]);
+
+  if (!cachedExpenses) store.cache.set('expenses', expenses);
+  if (!cachedGoal) store.cache.set('financial_goal', goalData);
 
   const paid = summary.paid || 0;
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
@@ -180,6 +187,7 @@ function openAddExpenseModal() {
       if (!name || !amount) { notify.error('Preencha todos os campos.'); return; }
       try {
         await apiFetch('/financial/expenses', { method: 'POST', body: JSON.stringify({ name, amount, category }) });
+        store.cache.del('expenses');
         notify.success('Despesa adicionada!');
         loadAll();
       } catch { notify.error('Erro ao adicionar.'); }
@@ -202,6 +210,7 @@ function openSetGoalModal() {
       if (!val || val <= 0) { notify.error('Informe um valor válido.'); return; }
       try {
         await apiFetch('/financial/goal', { method: 'PUT', body: JSON.stringify({ monthly_goal: val }) });
+        store.cache.del('financial_goal');
         notify.success('Meta salva!');
         loadAll();
       } catch { notify.error('Erro ao salvar meta.'); }
@@ -213,6 +222,7 @@ window.deleteExpense = async (id) => {
   if (!confirm('Remover esta despesa?')) return;
   try {
     await apiFetch(`/financial/expenses/${id}`, { method: 'DELETE' });
+    store.cache.del('expenses');
     notify.success('Despesa removida.');
     loadAll();
   } catch { notify.error('Erro ao remover.'); }
@@ -247,6 +257,7 @@ window.editExpense = (id, name, amount, category) => {
         // Deleta e recria (API não tem PATCH para expenses)
         await apiFetch(`/financial/expenses/${id}`, { method: 'DELETE' });
         await apiFetch('/financial/expenses', { method: 'POST', body: JSON.stringify({ name: newName, amount: newAmount, category: newCat }) });
+        store.cache.del('expenses');
         notify.success('Despesa atualizada!');
         loadAll();
       } catch { notify.error('Erro ao atualizar.'); }
