@@ -87,7 +87,10 @@ async function loadLeads() {
         <td>${esc(l.name || '')}</td><td>${phone || '—'}</td><td>${esc(l.email || '') || '—'}</td>
         <td>${esc(l.source || '') || '—'}</td><td>${dateUtils.format(l.created_at)}</td>
         <td style="display:flex;gap:.4rem;align-items:center">
-          ${waHref ? `<a href="${waHref}" target="_blank" rel="noopener" class="btn btn--primary btn--sm" style="display:inline-flex;align-items:center;gap:.3rem">${WA_SVG} WhatsApp</a>` : ''}
+          ${waHref
+            ? `<a href="${waHref}" target="_blank" rel="noopener" class="btn btn--primary btn--sm" style="display:inline-flex;align-items:center;gap:.3rem">${WA_SVG} WhatsApp</a>`
+            : `<button class="btn btn--primary btn--sm" disabled style="opacity:.4;cursor:not-allowed;display:inline-flex;align-items:center;gap:.3rem">${WA_SVG} WhatsApp</button>`
+          }
           ${statusBadge}
           <button class="btn btn--danger btn--sm" onclick="deleteLead('${esc(l.id)}')">Excluir</button>
         </td>
