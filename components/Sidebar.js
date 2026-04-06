@@ -161,6 +161,7 @@ function startGlobalPolling() {
 
       if (!getNotifPref()) return;
 
+      // Prioridade: agendamento > lead. Se chegou agendamento, não dispara lead no mesmo ciclo.
       if (appointments?.length > 0) {
         const a = appointments[0];
         const clientName = escHtml(a.clients?.name || '');
@@ -171,12 +172,11 @@ function startGlobalPolling() {
         const day = dtBR ? String(dtBR.getDate()).padStart(2, '0') : '';
         const time = dt ? dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '';
         const subtitle = weekday && day && time ? `${weekday} ${day} às ${time}` : '';
-        showGlobalToast(clientName, subtitle);
-      }
-
-      if (leads?.length > 0) {
+        showGlobalToast(clientName, subtitle, true); // true = fala "Agendamento"
+      } else if (leads?.length > 0) {
+        // Só notifica lead se não veio agendamento no mesmo ciclo
         const l = leads[0];
-        showGlobalToast(escHtml(l.name || 'Novo lead'), escHtml(l.source || ''));
+        showGlobalToast(escHtml(l.name || 'Novo lead'), escHtml(l.source || ''), false); // false = só plim
       }
     } catch (e) {
       console.warn('[psiclo notifications]', e.message);
@@ -201,10 +201,9 @@ function getAudioCtx() {
   return _audioCtx;
 }
 
-function playPlin() {
+function playPlin(falarAgendamento = false) {
   try {
     const ctx = getAudioCtx();
-    // Nota 1
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.connect(gain1); gain1.connect(ctx.destination);
@@ -213,7 +212,6 @@ function playPlin() {
     gain1.gain.setValueAtTime(0.35, ctx.currentTime);
     gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
     osc1.start(ctx.currentTime); osc1.stop(ctx.currentTime + 0.3);
-    // Nota 2
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.connect(gain2); gain2.connect(ctx.destination);
@@ -224,8 +222,8 @@ function playPlin() {
     gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
     osc2.start(ctx.currentTime + 0.15); osc2.stop(ctx.currentTime + 0.55);
 
-    // Voz: fala "Agendamento" após o plim
-    if ('speechSynthesis' in window) {
+    // Voz só para agendamentos
+    if (falarAgendamento && 'speechSynthesis' in window) {
       const utter = new SpeechSynthesisUtterance('Agendamento');
       utter.lang = 'pt-BR';
       utter.volume = 0.9;
@@ -236,8 +234,8 @@ function playPlin() {
   } catch (_) {}
 }
 
-function showGlobalToast(title, subtitle = '') {
-  playPlin();
+function showGlobalToast(title, subtitle = '', isAppointment = false) {
+  playPlin(isAppointment);
   const el = document.createElement('div');
   el.className = 'appt-toast';
   el.innerHTML = `

@@ -80,7 +80,7 @@ async function loadLeads() {
     if (!leads.length) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Nenhum lead encontrado.</td></tr>`; return; }
     tbody.innerHTML = leads.map((l) => {
       const phone = esc(l.phone || '');
-      const waMsg = encodeURIComponent(`Olá ${l.name || ''}, sou a Júlia Vidal. Gostaria de conversar sobre seu agendamento.`);
+      const waMsg = encodeURIComponent(`Olá, Júlia Vidal. Tudo bem?\n\nEntrei em contato por meio do seu site e fiquei bastante interessado(a) no seu trabalho. Gostaria de obter mais informações sobre as sessões e entender melhor como funciona o atendimento.\n\nPoderia, por gentileza, esclarecer algumas dúvidas?\n\nAgradeço desde já e fico no aguardo do seu retorno.`);
       const waHref = phone ? `https://wa.me/55${l.phone.replace(/\D/g, '')}?text=${waMsg}` : null;
       const statusBadge = l.status === 'converted' ? `<span class="badge badge--converted">Convertido</span>` : `<span class="badge badge--pending">Pendente</span>`;
       return `<tr>
