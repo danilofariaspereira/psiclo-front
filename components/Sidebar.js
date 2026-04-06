@@ -314,6 +314,8 @@ function showEditPhoneModal() {
     }
   });
 }
+
+function showChangePasswordModal() {
   const existing = document.getElementById('change-pass-modal');
   if (existing) existing.remove();
 
