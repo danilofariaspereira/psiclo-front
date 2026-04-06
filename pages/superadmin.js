@@ -768,3 +768,130 @@ document.querySelectorAll('.sa-nav-item').forEach(item => {
 document.addEventListener('change', (e) => {
   if (e.target?.id === 'leadsFilterStatus') loadLeads();
 });
+
+// ── Notificacao de novo lead em tempo real ────────────────────
+let _lastLeadAt = null;
+let _leadPollingTimer = null;
+
+function playLeadSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Dois bips curtos — plim plim
+    [0, 180].forEach(delay => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0, ctx.currentTime + delay / 1000);
+      gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + delay / 1000 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay / 1000 + 0.25);
+      osc.start(ctx.currentTime + delay / 1000);
+      osc.stop(ctx.currentTime + delay / 1000 + 0.3);
+    });
+  } catch (_) {}
+}
+
+function showLeadToast(lead) {
+  const existing = document.getElementById('leadNotifToast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'leadNotifToast';
+  toast.style.cssText = `
+    position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999;
+    background:linear-gradient(135deg,#0d1b6e,#1565c0);
+    color:#fff; border-radius:14px; padding:1rem 1.25rem;
+    box-shadow:0 8px 32px rgba(0,0,0,.35);
+    display:flex; align-items:center; gap:.85rem;
+    min-width:260px; max-width:320px;
+    animation:leadToastIn .35s cubic-bezier(.22,1,.36,1);
+    border:1px solid rgba(255,255,255,.15);
+  `;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes leadToastIn {
+      from { opacity:0; transform:translateY(20px) scale(.95); }
+      to   { opacity:1; transform:translateY(0) scale(1); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  toast.innerHTML = `
+    <div style="width:38px;height:38px;border-radius:10px;background:rgba(0,230,180,.2);
+      display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="18" height="18" fill="none" stroke="#00e6b4" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <line x1="23" y1="11" x2="17" y2="11"/>
+        <line x1="20" y1="8" x2="20" y2="14"/>
+      </svg>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:.8rem;font-weight:700;color:#00e6b4;margin-bottom:.15rem">Novo lead recebido</div>
+      <div style="font-size:.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+        ${esc(lead.name || 'Visitante')}
+      </div>
+      <div style="font-size:.72rem;opacity:.6;margin-top:.1rem">${esc(lead.source || 'Landing page')}</div>
+    </div>
+    <button onclick="this.parentElement.remove()" style="
+      background:rgba(255,255,255,.1);border:none;color:#fff;
+      width:24px;height:24px;border-radius:50%;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem
+    ">x</button>
+  `;
+
+  document.body.appendChild(toast);
+  setTimeout(() => { if (toast.parentElement) toast.remove(); }, 6000);
+}
+
+async function pollNewLeads() {
+  try {
+    const { ok, data } = await api('/psiclo-leads?limit=1');
+    if (!ok || !data?.length) return;
+
+    const latest = data[0];
+
+    // Primeira execucao — apenas registra o timestamp, nao notifica
+    if (_lastLeadAt === null) {
+      _lastLeadAt = latest.created_at;
+      return;
+    }
+
+    // Novo lead chegou depois do ultimo registrado
+    if (latest.created_at > _lastLeadAt) {
+      _lastLeadAt = latest.created_at;
+      playLeadSound();
+      showLeadToast(latest);
+
+      // Atualiza a tabela se a aba de leads estiver aberta
+      if ($('pageLeads')?.style.display !== 'none') {
+        loadLeads();
+      }
+    }
+  } catch (_) {}
+}
+
+function startLeadPolling() {
+  if (_leadPollingTimer) return;
+  pollNewLeads(); // executa imediatamente para registrar baseline
+  _leadPollingTimer = setInterval(pollNewLeads, 15000); // verifica a cada 15s
+}
+
+// Inicia polling assim que o painel abrir
+const _origOpenPanel = openPanel;
+// Sobrescreve openPanel para iniciar polling apos login
+const _openPanelOrig = window._openPanelHooked;
+if (!_openPanelOrig) {
+  window._openPanelHooked = true;
+  const _panelEl = document.getElementById('saPanel');
+  const observer = new MutationObserver(() => {
+    if (_panelEl.style.display !== 'none') {
+      startLeadPolling();
+      observer.disconnect();
+    }
+  });
+  observer.observe(_panelEl, { attributes: true, attributeFilter: ['style'] });
+}
