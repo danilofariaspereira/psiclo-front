@@ -1,6 +1,3 @@
-import { authService } from '../services/auth.service.js';
-import { renderSidebar } from '../components/Sidebar.js';
-import { renderHeader } from '../components/Header.js';
 import { store } from '../state/store.js';
 import { currencyUtils } from '../utils/currency.js';
 
@@ -21,13 +18,32 @@ async function apiFetch(path, options = {}) {
   return res.status === 204 ? null : res.json();
 }
 
-async function init() {
-  const session = await authService.getSession();
-  if (!session) { window.location.href = './login.html'; return; }
-  store.set('professional', session.professional);
-  renderSidebar('balance');
-  renderHeader('Balanço financeiro');
+export async function mount(container) {
+  container.innerHTML = `
+<div class="page-header"><h1 class="page-title">Balanço financeiro</h1></div>
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem">
+  <div class="stat-card"><p class="stat-card__label">Faturamento</p><p class="stat-card__value stat-card__value--green" id="b-revenue">—</p></div>
+  <div class="stat-card"><p class="stat-card__label">Despesas</p><p class="stat-card__value stat-card__value--red" id="b-expenses">—</p></div>
+  <div class="stat-card"><p class="stat-card__label">Lucro estimado</p><p class="stat-card__value" id="b-profit">—</p></div>
+  <div class="stat-card"><p class="stat-card__label">Meta mensal</p><p class="stat-card__value" id="b-goal">—</p></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+  <div class="card card--blue"><p class="card__title">Progresso da meta</p><div style="max-width:200px;margin:.5rem auto"><canvas id="chart-goal" height="200"></canvas></div><p id="goal-msg" style="text-align:center;font-size:.82rem;color:rgba(255,255,255,.75);margin-top:.4rem"></p></div>
+  <div class="card card--blue"><p class="card__title">Faturamento vs Despesas</p><canvas id="chart-bar" height="160"></canvas></div>
+</div>
+<div class="card">
+  <p class="card__title" style="margin-bottom:.75rem">Pagamentos recebidos no mês</p>
+  <div class="table-wrapper"><table class="table"><thead><tr><th>Cliente</th><th>Valor</th><th>Data</th><th>Forma</th></tr></thead><tbody id="balance-payments-body"><tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Carregando...</td></tr></tbody></table></div>
+  <div id="balance-payments-total" style="text-align:right;margin-top:.75rem;font-size:.85rem;color:var(--color-text-muted)"></div>
+</div>
+`;
+
   loadAll();
+}
+
+export function unmount() {
+  if (goalChart) { goalChart.destroy(); goalChart = null; }
+  if (barChart) { barChart.destroy(); barChart = null; }
 }
 
 async function loadAll() {
@@ -52,7 +68,6 @@ async function loadAll() {
   renderBarChart(revenue, totalExpenses, goal);
   loadPayments();
 
-  // Celebração se meta atingida
   if (goal > 0 && revenue >= goal) showGoalCelebration(revenue, goal);
 }
 
@@ -62,7 +77,6 @@ async function loadPayments() {
   try {
     const payments = await apiFetch('/financial/payments?status=paid');
 
-    // Filtra só pagamentos do mês atual no fuso de Brasília
     const now = new Date();
     const brNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
     const year = brNow.getFullYear();
@@ -179,16 +193,15 @@ function renderBarChart(revenue, expenses, goal) {
       plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { color: 'rgba(255,255,255,.8)', font: { size: 11 } }, grid: { display: false } },
-        y: { ticks: { callback: v => `R$${v}`, color: 'rgba(255,255,255,.6)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.1)' } },
+        y: { ticks: { callback: v => `R${v}`, color: 'rgba(255,255,255,.6)', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.1)' } },
       },
     },
   });
 }
 
-
 function showGoalCelebration(revenue, goal) {
   const existing = document.getElementById('goal-celebration');
-  if (existing) return; // só mostra uma vez
+  if (existing) return;
 
   const el = document.createElement('div');
   el.id = 'goal-celebration';
@@ -207,5 +220,3 @@ function showGoalCelebration(revenue, goal) {
     </div>`;
   document.body.appendChild(el);
 }
-
-init();

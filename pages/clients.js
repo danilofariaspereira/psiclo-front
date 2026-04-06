@@ -1,6 +1,3 @@
-import { authService } from '../services/auth.service.js';
-import { renderSidebar } from '../components/Sidebar.js';
-import { renderHeader } from '../components/Header.js';
 import { Modal } from '../components/Modal.js';
 import { notify } from '../utils/notify.js';
 import { store } from '../state/store.js';
@@ -22,17 +19,28 @@ async function apiFetch(path, options = {}) {
   return res.status === 204 ? null : res.json();
 }
 
-async function init() {
-  const session = await authService.getSession();
-  if (!session) { window.location.href = './login.html'; return; }
-  store.set('professional', session.professional);
-  renderSidebar('clients');
-  renderHeader('Clientes');
+export async function mount(container) {
+  container.innerHTML = `
+<div class="page-header">
+  <h1 class="page-title">Clientes</h1>
+  <div style="display:flex;gap:.5rem;align-items:center">
+    <input type="text" id="filter-search" class="form-input" placeholder="Buscar por nome..." style="width:200px" />
+    <select id="filter-active" class="form-select" style="width:auto"><option value="">Todos</option><option value="true">Ativos</option><option value="false">Inativos</option></select>
+    <button class="btn btn--primary" id="btn-new-client">+ Novo cliente</button>
+  </div>
+</div>
+<div id="clients-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem"><p style="color:var(--color-text-muted);grid-column:1/-1;text-align:center;padding:2rem">Carregando...</p></div>
+`;
+
   await loadClients();
 
   document.getElementById('btn-new-client').addEventListener('click', openNewClientModal);
   document.getElementById('filter-search').addEventListener('input', applyFilters);
   document.getElementById('filter-active').addEventListener('change', applyFilters);
+}
+
+export function unmount() {
+  // nada a limpar
 }
 
 async function loadClients() {
@@ -157,7 +165,6 @@ window.openClientHistory = async (id, name) => {
     body.innerHTML = `<div style="display:flex;flex-direction:column;gap:.75rem">${rows}</div>`;
     document.querySelector('#psiclo-modal .modal__footer').style.display = 'none';
 
-    // Vincula os botões de observação usando índice — evita problemas com escaping inline
     body.querySelectorAll('.history-item__obs-btn').forEach(btn => {
       const idx = parseInt(btn.dataset.noteIdx);
       btn.addEventListener('click', () => viewHistoryNote(appts[idx].notes));
@@ -168,7 +175,6 @@ window.openClientHistory = async (id, name) => {
 };
 
 window.viewHistoryNote = (notes) => {
-  // Fecha o modal de histórico antes de abrir o overlay
   document.getElementById('psiclo-modal')?.classList.remove('modal--open');
   document.body.style.overflow = '';
 
@@ -198,7 +204,6 @@ window.viewHistoryNote = (notes) => {
 };
 
 window.editClient = async (id) => {
-  // Busca dados atuais do cliente
   const client = allClients.find(c => c.id === id);
   if (!client) return;
 
@@ -220,7 +225,6 @@ window.editClient = async (id) => {
       if (!name) { notify.error('Nome obrigatório.'); return; }
       if (!birthRaw) { notify.error('Data de nascimento obrigatória.'); return; }
 
-      // Converte DD/MM/AAAA → YYYY-MM-DD
       let birth_date = birthRaw;
       if (birthRaw.includes('/')) {
         const [d, m, y] = birthRaw.split('/');
@@ -245,7 +249,6 @@ window.editClient = async (id) => {
     },
   });
 
-  // Máscara DD/MM/AAAA no campo de data
   setTimeout(() => {
     const input = document.getElementById('ec-birth');
     if (!input) return;
@@ -266,5 +269,3 @@ window.deleteClient = async (id, name) => {
     loadClients();
   } catch { notify.error('Erro ao remover cliente.'); }
 };
-
-init();
