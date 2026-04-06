@@ -599,3 +599,172 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && document.activeElement?.id === 'auditFilterAction') loadAuditLogs();
 });
+
+// ── Leads do site ─────────────────────────────────────────────
+const LEADS_API = 'https://psiclo-back.vercel.app/api';
+const LEADS_API_KEY = 'psiclo_lp_2024';
+
+const WA_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.852L.057 23.57a.75.75 0 0 0 .916.916l5.718-1.475A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.528-5.204-1.443l-.372-.22-3.394.875.893-3.302-.242-.384A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
+
+const LEADS_WA_NUMBER = '5521993350228';
+
+const LEADS_WA_MESSAGES = {
+  'Comecar agora - Banner': (name) =>
+    `Ola, ${name}.\n\nVi que voce clicou em Comecar agora no nosso site.\n\nO PSICLO e um sistema de gestao completo para psicologos: agenda online, financeiro automatico, gestao de leads e landing page propria, tudo em um so lugar.\n\nGostaria de entender melhor como funciona e verificar se faz sentido para a sua clinica?\n\nEstou a disposicao para conversar.`,
+  'Quero experimentar - Menu': (name) =>
+    `Ola, ${name}.\n\nRecebi seu contato pelo menu do site do PSICLO.\n\nSe tiver alguma duvida sobre o sistema ou quiser saber mais sobre as funcionalidades, estou aqui para ajudar.\n\nQual seria o melhor momento para conversarmos?`,
+  'Comecar agora - Preco': (name) =>
+    `Ola, ${name}.\n\nVi que voce se interessou pelo plano do PSICLO.\n\nO plano e unico, com tudo incluido por R$ 69,90 por mes: agenda, financeiro, leads, landing page e suporte.\n\nPosso te passar mais detalhes sobre o que esta incluido e como funciona o processo de ativacao?`,
+  'Quero ter acesso - Mapas': (name) =>
+    `Ola, ${name}.\n\nVi que voce se interessou pelos mapas de calor do PSICLO.\n\nEsse recurso mostra quais horarios e dias concentram mais atendimentos, e quais meses e formas de pagamento sao mais rentaveis para a sua clinica.\n\nGostaria de ver uma demonstracao de como isso funciona na pratica?`,
+  'Quero conhecer o PSICLO': (name) =>
+    `Ola, ${name}.\n\nRecebi seu contato pelo formulario do site do PSICLO.\n\nEstou aqui para responder suas duvidas e ajudar no que precisar.\n\nComo posso te ajudar?`,
+};
+
+function leadsWaMsg(source, name) {
+  const fn = LEADS_WA_MESSAGES[source];
+  if (fn) return fn(name);
+  return `Ola, ${name}.\n\nRecebi seu contato pelo site do PSICLO.\n\nEstou a disposicao para conversar sobre o sistema e entender como podemos ajudar na organizacao da sua clinica.\n\nQual seria o melhor momento para conversarmos?`;
+}
+
+let leadsChartConv = null, leadsChartSrc = null;
+
+async function loadLeads() {
+  const status = $('leadsFilterStatus')?.value || '';
+  const qs = status ? `?status=${status}` : '';
+
+  // Busca via API Key (endpoint publico de criacao, mas listagem requer auth do superadmin)
+  // Usa o endpoint admin que ja existe
+  const { ok, data } = await api(`/leads-site${qs}`);
+
+  if (!ok) {
+    $('saLeadsList').innerHTML = `<p class="sa-error">${data?.error || 'Erro ao carregar leads.'}</p>`;
+    return;
+  }
+
+  const leads = data || [];
+
+  // Metricas
+  $('leadsTotal').textContent     = leads.length;
+  $('leadsNew').textContent       = leads.filter(l => l.status === 'new').length;
+  $('leadsContacted').textContent = leads.filter(l => l.status === 'contacted').length;
+  $('leadsConverted').textContent = leads.filter(l => l.status === 'converted').length;
+
+  // Graficos
+  renderLeadsCharts(leads);
+
+  // Tabela
+  if (!leads.length) {
+    $('saLeadsList').innerHTML = '<p class="sa-empty">Nenhum lead encontrado.</p>';
+    return;
+  }
+
+  $('saLeadsList').innerHTML = `
+    <div class="sa-charts" style="margin-bottom:1rem">
+      <div class="sa-chart-card">
+        <div class="sa-chart-title">Conversao de leads</div>
+        <div class="sa-chart-sub">Proporcao entre pendentes e convertidos</div>
+        <div style="position:relative;height:180px"><canvas id="leadsChartConv"></canvas></div>
+      </div>
+      <div class="sa-chart-card">
+        <div class="sa-chart-title">Origem dos leads</div>
+        <div class="sa-chart-sub">Qual botao gerou o contato</div>
+        <div style="position:relative;height:180px"><canvas id="leadsChartSrc"></canvas></div>
+      </div>
+    </div>
+    <table class="sa-table">
+      <thead><tr>
+        <th>Nome</th><th>WhatsApp</th><th>E-mail</th>
+        <th>Origem</th><th>Data</th><th>Status</th><th style="text-align:center">Acoes</th>
+      </tr></thead>
+      <tbody>${leads.map(l => {
+        const phone = esc(l.phone || '');
+        const source = l.source || 'landing_page';
+        const waMsg = encodeURIComponent(leadsWaMsg(source, esc(l.name || 'cliente')));
+        const waHref = phone ? `https://wa.me/55${l.phone.replace(/\D/g,'')}?text=${waMsg}` : null;
+        const statusColor = l.status === 'converted' ? 'green' : l.status === 'lost' ? 'red' : '';
+        const statusLabel = { new: 'Novo', contacted: 'Contactado', converted: 'Convertido', lost: 'Perdido' }[l.status] || l.status;
+        return `<tr>
+          <td>${esc(l.name || '')}</td>
+          <td>${phone || '—'}</td>
+          <td style="font-size:.78rem">${esc(l.email || '') || '—'}</td>
+          <td style="font-size:.78rem">${esc(source)}</td>
+          <td style="font-size:.78rem;white-space:nowrap">${new Date(l.created_at).toLocaleDateString('pt-BR')}</td>
+          <td><span class="sa-badge ${statusColor ? 'sa-badge--' + statusColor : ''}">${statusLabel}</span></td>
+          <td style="text-align:center;display:flex;gap:.3rem;justify-content:center">
+            ${waHref
+              ? `<a href="${waHref}" target="_blank" rel="noopener" class="sa-btn-sm" style="display:inline-flex;align-items:center;gap:.3rem">${WA_SVG} WhatsApp</a>`
+              : `<button class="sa-btn-sm" disabled style="opacity:.4">${WA_SVG} WhatsApp</button>`
+            }
+            <select class="sa-btn-sm" style="padding:3px 6px;font-size:.75rem" onchange="updateLeadStatus('${esc(l.id)}', this.value, this)">
+              <option value="new"       ${l.status==='new'       ?'selected':''}>Novo</option>
+              <option value="contacted" ${l.status==='contacted' ?'selected':''}>Contactado</option>
+              <option value="converted" ${l.status==='converted' ?'selected':''}>Convertido</option>
+              <option value="lost"      ${l.status==='lost'      ?'selected':''}>Perdido</option>
+            </select>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+
+  // Renderiza graficos apos inserir canvas no DOM
+  renderLeadsCharts(leads);
+}
+
+function renderLeadsCharts(leads) {
+  const conv    = leads.filter(l => l.status === 'converted').length;
+  const pending = leads.filter(l => l.status === 'new' || l.status === 'contacted').length;
+  const lost    = leads.filter(l => l.status === 'lost').length;
+
+  const bySource = {};
+  leads.forEach(l => { const s = l.source || 'Outros'; bySource[s] = (bySource[s] || 0) + 1; });
+
+  const convCanvas = document.getElementById('leadsChartConv');
+  const srcCanvas  = document.getElementById('leadsChartSrc');
+  if (!convCanvas || !srcCanvas) return;
+
+  if (leadsChartConv) leadsChartConv.destroy();
+  leadsChartConv = new Chart(convCanvas, {
+    type: 'doughnut',
+    data: { labels: ['Convertidos','Pendentes','Perdidos'], datasets: [{ data: [conv||.001, pending||.001, lost||.001], backgroundColor: ['#a5f3c0','#fde68a','#fca5a5'], borderWidth: 0 }] },
+    options: { responsive:true, maintainAspectRatio:false, cutout:'65%', plugins: { legend: { position:'bottom', labels: { color:'rgba(255,255,255,.85)', font:{size:10}, padding:8 } }, tooltip: { callbacks: { label: c => ` ${c.label}: ${c.raw===.001?0:c.raw}` } } } },
+  });
+
+  if (leadsChartSrc) leadsChartSrc.destroy();
+  leadsChartSrc = new Chart(srcCanvas, {
+    type: 'bar',
+    data: { labels: Object.keys(bySource), datasets: [{ data: Object.values(bySource), backgroundColor: 'rgba(2,136,209,0.7)', borderRadius:4, borderWidth:0 }] },
+    options: { responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{ legend:{display:false} }, scales: { x:{ ticks:{color:'rgba(255,255,255,.6)',font:{size:9},stepSize:1}, grid:{color:'rgba(255,255,255,.05)'} }, y:{ ticks:{color:'rgba(255,255,255,.8)',font:{size:9}}, grid:{display:false} } } },
+  });
+}
+
+window.updateLeadStatus = async (id, status, selectEl) => {
+  selectEl.disabled = true;
+  const { ok } = await api(`/leads-site/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  selectEl.disabled = false;
+  if (!ok) { alert('Erro ao atualizar status.'); return; }
+  loadLeads();
+};
+
+// Registra pagina de leads na navegacao
+const _origPages = pages;
+_origPages.leads = 'pageLeads';
+
+document.querySelectorAll('.sa-nav-item').forEach(item => {
+  if (item.dataset.page === 'leads') {
+    item.addEventListener('click', () => {
+      // Remove active de todos
+      document.querySelectorAll('.sa-nav-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      // Esconde todas as paginas
+      Object.values(_origPages).forEach(p => { const el = $(p); if (el) el.style.display = 'none'; });
+      $('pageLeads').style.display = 'flex';
+      loadLeads();
+    });
+  }
+});
+
+// Filtro de status
+document.addEventListener('change', (e) => {
+  if (e.target?.id === 'leadsFilterStatus') loadLeads();
+});

@@ -102,6 +102,10 @@
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         Auditoria LGPD
       </button>
+      <button class="sa-nav-item" data-page="leads">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg>
+        Leads do site
+      </button>
 
       <div class="sa-sidebar__footer">
         <input type="file" id="saAvatarInput" accept="image/*" style="display:none" />
@@ -232,6 +236,34 @@
         </div>
         <div class="sa-page">
           <div id="saSaList" class="sa-table-wrap"></div>
+        </div>
+      </div>
+
+      <!-- Leads do site -->
+      <div id="pageLeads" style="display:none; flex-direction:column; flex:1; overflow:hidden;">
+        <div class="sa-topbar">
+          <div>
+            <div class="sa-topbar__title">Leads do site</div>
+            <div class="sa-topbar__sub">Contatos captados pela landing page do PSICLO</div>
+          </div>
+          <div style="display:flex;gap:.5rem;align-items:center;">
+            <select id="leadsFilterStatus" style="padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:inherit;font-size:.82rem;">
+              <option value="">Todos</option>
+              <option value="new">Novos</option>
+              <option value="contacted">Contactados</option>
+              <option value="converted">Convertidos</option>
+              <option value="lost">Perdidos</option>
+            </select>
+          </div>
+        </div>
+        <div class="sa-page">
+          <div class="sa-metrics" id="leadsMetrics">
+            <div class="sa-metric"><div class="sa-metric__label">Total de leads</div><div class="sa-metric__value purple" id="leadsTotal">—</div></div>
+            <div class="sa-metric"><div class="sa-metric__label">Novos</div><div class="sa-metric__value" id="leadsNew">—</div></div>
+            <div class="sa-metric"><div class="sa-metric__label">Contactados</div><div class="sa-metric__value" id="leadsContacted">—</div></div>
+            <div class="sa-metric"><div class="sa-metric__label">Convertidos</div><div class="sa-metric__value green" id="leadsConverted">—</div></div>
+          </div>
+          <div id="saLeadsList" class="sa-table-wrap" style="margin-top:.75rem"></div>
         </div>
       </div>
 
