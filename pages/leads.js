@@ -42,7 +42,7 @@ export function unmount() {
   if (sourceChart) { sourceChart.destroy(); sourceChart = null; }
 }
 
-async function loadCharts() {
+const WA_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.852L.057 23.57a.75.75 0 0 0 .916.916l5.718-1.475A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.528-5.204-1.443l-.372-.22-3.394.875.893-3.302-.242-.384A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
   try {
     const stats = await apiFetch('/leads/stats');
     const { byStatus = {}, bySource = {} } = stats;
@@ -69,7 +69,35 @@ async function loadCharts() {
   } catch (_) {}
 }
 
-const WA_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.852L.057 23.57a.75.75 0 0 0 .916.916l5.718-1.475A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.686-.528-5.204-1.443l-.372-.22-3.394.875.893-3.302-.242-.384A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>`;
+const SOURCE_LABELS = {
+  'Comecar agora - Banner':      'Comecar agora - Banner',
+  'Quero experimentar - Menu':   'Quero experimentar - Menu',
+  'Comecar agora - Preco':       'Comecar agora - Preco',
+  'Quero ter acesso - Mapas':    'Quero ter acesso - Mapas',
+  'Consultar landing page - WhatsApp': 'Consultar landing page - WhatsApp',
+  'Quero conhecer o PSICLO':     'Quero conhecer o PSICLO',
+  'landing_page':                'Landing page',
+};
+
+const WA_MESSAGES = {
+  'Comecar agora - Banner': (name) =>
+    `Ola, ${name}.\n\nVi que voce clicou em Comecar agora no nosso site.\n\nO PSICLO e um sistema de gestao completo para psicologos: agenda online, financeiro automatico, gestao de leads e landing page propria, tudo em um so lugar.\n\nGostaria de entender melhor como funciona e verificar se faz sentido para a sua clinica?\n\nEstou a disposicao para conversar.`,
+
+  'Quero experimentar - Menu': (name) =>
+    `Ola, ${name}.\n\nRecebi seu contato pelo menu do site do PSICLO.\n\nSe tiver alguma duvida sobre o sistema ou quiser saber mais sobre as funcionalidades, estou aqui para ajudar.\n\nQual seria o melhor momento para conversarmos?`,
+
+  'Comecar agora - Preco': (name) =>
+    `Ola, ${name}.\n\nVi que voce se interessou pelo plano do PSICLO.\n\nO plano e unico, com tudo incluido por R$ 69,90 por mes: agenda, financeiro, leads, landing page e suporte.\n\nPosso te passar mais detalhes sobre o que esta incluido e como funciona o processo de ativacao?`,
+
+  'Quero ter acesso - Mapas': (name) =>
+    `Ola, ${name}.\n\nVi que voce se interessou pelos mapas de calor do PSICLO.\n\nEsse recurso mostra quais horarios e dias concentram mais atendimentos, e quais meses e formas de pagamento sao mais rentaveis para a sua clinica.\n\nGostaria de ver uma demonstracao de como isso funciona na pratica?`,
+
+  'Quero conhecer o PSICLO': (name) =>
+    `Ola, ${name}.\n\nRecebi seu contato pelo formulario do site do PSICLO.\n\nEstou aqui para responder suas duvidas e ajudar no que precisar.\n\nComo posso te ajudar?`,
+
+  'landing_page': (name) =>
+    `Ola, ${name}.\n\nRecebi seu contato pelo site do PSICLO.\n\nEstou a disposicao para conversar sobre o sistema e entender como podemos ajudar na organizacao da sua clinica.\n\nQual seria o melhor momento para conversarmos?`,
+};
 
 async function loadLeads() {
   const tbody = document.getElementById('leads-body');
@@ -80,12 +108,18 @@ async function loadLeads() {
     if (!leads.length) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Nenhum lead encontrado.</td></tr>`; return; }
     tbody.innerHTML = leads.map((l) => {
       const phone = esc(l.phone || '');
-      const waMsg = encodeURIComponent(`Olá, Júlia Vidal. Tudo bem?\n\nEntrei em contato por meio do seu site e fiquei bastante interessado(a) no seu trabalho. Gostaria de obter mais informações sobre as sessões e entender melhor como funciona o atendimento.\n\nPoderia, por gentileza, esclarecer algumas dúvidas?\n\nAgradeço desde já e fico no aguardo do seu retorno.`);
+      const source = l.source || 'landing_page';
+      const sourceLabel = source;
+      const msgFn = WA_MESSAGES[source] || WA_MESSAGES['landing_page'];
+      const waMsg = encodeURIComponent(msgFn(esc(l.name || 'cliente')));
       const waHref = phone ? `https://wa.me/55${l.phone.replace(/\D/g, '')}?text=${waMsg}` : null;
-      const statusBadge = l.status === 'converted' ? `<span class="badge badge--converted">Convertido</span>` : `<span class="badge badge--pending">Pendente</span>`;
+      const statusBadge = l.status === 'converted'
+        ? `<span class="badge badge--converted">Convertido</span>`
+        : `<span class="badge badge--pending">Pendente</span>`;
       return `<tr>
         <td>${esc(l.name || '')}</td><td>${phone || '—'}</td><td>${esc(l.email || '') || '—'}</td>
-        <td>${esc(l.source || '') || '—'}</td><td>${dateUtils.format(l.created_at)}</td>
+        <td><span title="${source}">${sourceLabel}</span></td>
+        <td>${dateUtils.format(l.created_at)}</td>
         <td style="display:flex;gap:.4rem;align-items:center">
           ${waHref
             ? `<a href="${waHref}" target="_blank" rel="noopener" class="btn btn--primary btn--sm" style="display:inline-flex;align-items:center;gap:.3rem">${WA_SVG} WhatsApp</a>`
