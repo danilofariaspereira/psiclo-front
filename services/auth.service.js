@@ -24,14 +24,15 @@ export const authService = {
   },
 
   async logout() {
-    sessionStorage.removeItem(SESSION_CACHE_KEY);
+    // Limpa todo o sessionStorage para não deixar resíduo
+    sessionStorage.clear();
     try {
       await fetch(`${API}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
     } catch (_) {}
-    window.location.href = '/pages/login.html';
+    window.location.href = '/';
   },
 
   async getSession() {

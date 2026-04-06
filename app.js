@@ -116,7 +116,8 @@ function showLogin() {
     btn.textContent = 'Entrando...';
     try {
       await authService.login(emailEl.value.trim(), passEl.value);
-      window.location.reload();
+      // Navega para / de forma limpa — evita cache do browser
+      window.location.replace('/');
     } catch (err) {
       errEl.textContent = err.message;
       btn.disabled = false;
