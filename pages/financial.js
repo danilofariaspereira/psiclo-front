@@ -114,10 +114,10 @@ async function loadPayments() {
     // Aplica filtros no frontend
     let filtered = payments.filter(p => {
       const name = (p.clients?.name || '').toLowerCase();
-      const date = p.due_date || '';
+      const paidDate = p.paid_at ? p.paid_at.split('T')[0] : '';
       const matchClient = !clientFilter || name.includes(clientFilter);
-      const matchFrom = !dateFrom || date >= dateFrom;
-      const matchTo = !dateTo || date <= dateTo;
+      const matchFrom = !dateFrom || paidDate >= dateFrom;
+      const matchTo = !dateTo || paidDate <= dateTo;
       return matchClient && matchFrom && matchTo;
     });
 
@@ -131,10 +131,13 @@ async function loadPayments() {
       let method = '—';
       const match = (p.notes || '').match(/^\[([^\]]+)\]/);
       if (match) method = match[1];
+      const displayDate = p.paid_at
+        ? new Date(p.paid_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo' })
+        : (p.due_date ? dateUtils.format(p.due_date + 'T00:00:00') : '—');
       return `<tr>
         <td>${esc(p.clients?.name) || '—'}</td>
         <td>${currencyUtils.format(p.amount)}</td>
-        <td>${dateUtils.format(p.due_date + 'T00:00:00')}</td>
+        <td>${displayDate}</td>
         <td>${METHOD_PT[method] || esc(method)}</td>
       </tr>`;
     }).join('');

@@ -50,9 +50,57 @@ async function loadAll() {
 
   renderGoalChart(revenue, goal);
   renderBarChart(revenue, totalExpenses, goal);
+  loadPayments();
 
   // Celebração se meta atingida
   if (goal > 0 && revenue >= goal) showGoalCelebration(revenue, goal);
+}
+
+async function loadPayments() {
+  const tbody = document.getElementById('balance-payments-body');
+  const totalEl = document.getElementById('balance-payments-total');
+  try {
+    const payments = await apiFetch('/financial/payments?status=paid');
+
+    // Filtra só pagamentos do mês atual no fuso de Brasília
+    const now = new Date();
+    const brNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+    const year = brNow.getFullYear();
+    const month = brNow.getMonth();
+
+    const thisMonth = (payments || []).filter(p => {
+      if (!p.paid_at) return false;
+      const d = new Date(new Date(p.paid_at).toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+      return d.getFullYear() === year && d.getMonth() === month;
+    });
+
+    if (!thisMonth.length) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Nenhum pagamento recebido este mês.</td></tr>`;
+      totalEl.textContent = '';
+      return;
+    }
+
+    const METHOD_PT = { pix: 'PIX', dinheiro: 'Dinheiro', cartao: 'Cartão', plano_saude: 'Plano de saúde' };
+
+    tbody.innerHTML = thisMonth.map(p => {
+      const match = (p.notes || '').match(/^\[([^\]]+)\]/);
+      const method = match ? (METHOD_PT[match[1]] || match[1]) : '—';
+      const date = new Date(p.paid_at).toLocaleDateString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo',
+      });
+      return `<tr>
+        <td>${p.clients?.name || '—'}</td>
+        <td>${currencyUtils.format(p.amount)}</td>
+        <td>${date}</td>
+        <td>${method}</td>
+      </tr>`;
+    }).join('');
+
+    const total = thisMonth.reduce((s, p) => s + Number(p.amount), 0);
+    totalEl.innerHTML = `<strong>Total do mês: ${currencyUtils.format(total)}</strong> (${thisMonth.length} pagamento${thisMonth.length !== 1 ? 's' : ''})`;
+  } catch {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--color-error)">Erro ao carregar.</td></tr>`;
+  }
 }
 
 function renderGoalChart(revenue, goal) {

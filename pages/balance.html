@@ -58,6 +58,20 @@
         </div>
       </div>
 
+      <!-- Pagamentos do mês -->
+      <div class="card">
+        <p class="card__title" style="margin-bottom:.75rem">Pagamentos recebidos no mês</p>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead><tr><th>Cliente</th><th>Valor</th><th>Data</th><th>Forma</th></tr></thead>
+            <tbody id="balance-payments-body">
+              <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="balance-payments-total" style="text-align:right;margin-top:.75rem;font-size:.85rem;color:var(--color-text-muted)"></div>
+      </div>
+
     </main>
   </div>
   <div id="toast-container" aria-live="polite"></div>
