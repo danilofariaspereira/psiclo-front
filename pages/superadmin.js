@@ -635,7 +635,7 @@ async function loadLeads() {
 
   // Busca via API Key (endpoint publico de criacao, mas listagem requer auth do superadmin)
   // Usa o endpoint admin que ja existe
-  const { ok, data } = await api(`/psiclo-leads${qs}`);
+  const { ok, data } = await apiLeads(`/psiclo-leads${qs}`);
 
   if (!ok) {
     $('saLeadsList').innerHTML = `<p class="sa-error">${data?.error || 'Erro ao carregar leads.'}</p>`;
@@ -740,7 +740,13 @@ function renderLeadsCharts(leads) {
 
 window.updateLeadStatus = async (id, status, selectEl) => {
   selectEl.disabled = true;
-  const { ok } = await api(`/psiclo-leads/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  const res = await fetch(`https://psiclo-back.vercel.app/api/psiclo-leads/${id}/status`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  const ok = res.ok;
   selectEl.disabled = false;
   if (!ok) { alert('Erro ao atualizar status.'); return; }
   loadLeads();
@@ -772,6 +778,16 @@ document.addEventListener('change', (e) => {
 // ── Notificacao de novo lead em tempo real ────────────────────
 let _lastLeadAt = null;
 let _leadPollingTimer = null;
+
+// Funcao separada para chamar /api/psiclo-leads (nao /api/admin)
+async function apiLeads(path) {
+  const res = await fetch(`https://psiclo-back.vercel.app/api${path}`, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const data = await res.json();
+  return { ok: res.ok, data };
+}
 
 function playLeadSound() {
   try {
@@ -849,7 +865,7 @@ function showLeadToast(lead) {
 
 async function pollNewLeads() {
   try {
-    const { ok, data } = await api('/psiclo-leads?limit=1');
+    const { ok, data } = await apiLeads('/psiclo-leads?limit=1');
     if (!ok || !data?.length) return;
 
     const latest = data[0];
