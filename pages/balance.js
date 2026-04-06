@@ -27,7 +27,7 @@ export async function mount(container) {
   <div class="stat-card"><p class="stat-card__label">Lucro estimado</p><p class="stat-card__value" id="b-profit">—</p></div>
   <div class="stat-card"><p class="stat-card__label">Meta mensal</p><p class="stat-card__value" id="b-goal">—</p></div>
 </div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+<div class="balance-charts" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
   <div class="card card--blue"><p class="card__title">Progresso da meta</p><div style="max-width:200px;margin:.5rem auto"><canvas id="chart-goal" height="200"></canvas></div><p id="goal-msg" style="text-align:center;font-size:.82rem;color:rgba(255,255,255,.75);margin-top:.4rem"></p></div>
   <div class="card card--blue"><p class="card__title">Faturamento vs Despesas</p><canvas id="chart-bar" height="160"></canvas></div>
 </div>

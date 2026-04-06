@@ -42,7 +42,7 @@ export async function mount(container) {
 <div class="card">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem">
     <p class="card__title" style="margin:0">Pagamentos recebidos</p>
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+    <div class="payments-filters" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
       <input type="text" id="filter-client" class="form-input" placeholder="Filtrar por cliente..." style="width:180px;padding:6px 10px;font-size:.82rem" />
       <input type="date" id="filter-date-from" class="form-input" style="width:140px;padding:6px 10px;font-size:.82rem" />
       <input type="date" id="filter-date-to" class="form-input" style="width:140px;padding:6px 10px;font-size:.82rem" />

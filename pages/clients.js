@@ -21,9 +21,9 @@ async function apiFetch(path, options = {}) {
 
 export async function mount(container) {
   container.innerHTML = `
-<div class="page-header">
+<div class="page-header clients-header">
   <h1 class="page-title">Clientes</h1>
-  <div style="display:flex;gap:.5rem;align-items:center">
+  <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
     <input type="text" id="filter-search" class="form-input" placeholder="Buscar por nome..." style="width:200px" />
     <select id="filter-active" class="form-select" style="width:auto"><option value="">Todos</option><option value="true">Ativos</option><option value="false">Inativos</option></select>
     <button class="btn btn--primary" id="btn-new-client">+ Novo cliente</button>

@@ -301,11 +301,22 @@
   /* Schedule */
   .schedule-layout { grid-template-columns: 1fr; }
 
-  /* Stats: 2 colunas no mobile */
-  .stats-grid { grid-template-columns: 1fr 1fr; }
+  /* Slots maiores no mobile */
+  .slot { padding: 12px 8px; font-size: 1rem; flex: 1 1 calc(33% - .5rem); text-align: center; }
 
-  /* Gráficos: coluna única no mobile */
-  .dash-charts-grid { grid-template-columns: 1fr !important; }
+  /* Stats: 2 colunas no mobile — exceto financeiro/balanco que tem 4 cards */
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  /* 4 cards: força 2 colunas e permite wrap */
+  .stats-grid[style*="repeat(4"] { grid-template-columns: 1fr 1fr !important; }
+
+  /* Gráficos lado a lado: coluna única no mobile */
+  .dash-charts-grid,
+  [class*="dash-charts"],
+  .balance-charts { grid-template-columns: 1fr !important; }
+
+  /* Força coluna única em qualquer grid de 2 colunas dentro de cards */
+  .card > [style*="grid-template-columns:1fr 1fr"],
+  .card > [style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
 
   /* Mapa de calor: scroll horizontal controlado */
   .heatmap-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -314,9 +325,21 @@
   /* Cards de pagamento: coluna única */
   .paymap-methods { grid-template-columns: 1fr !important; }
 
+  /* Clientes: botão novo cliente abaixo dos filtros */
+  .clients-header { flex-direction: column; align-items: stretch !important; }
+  .clients-header .btn { width: 100%; justify-content: center; margin-top: .25rem; }
+
+  /* Financeiro: filtros de pagamento empilhados */
+  .payments-filters { flex-direction: column !important; }
+  .payments-filters input,
+  .payments-filters .btn { width: 100% !important; }
+
   /* Page header: empilha no mobile */
   .page-header { flex-wrap: wrap; gap: .5rem; }
   .page-header .btn { font-size: .78rem; padding: 7px 12px; }
+
+  /* Login: esconde botão dark mode */
+  .login-theme-toggle { display: none !important; }
 }
 
 /* ── Cards de agendamento ── */

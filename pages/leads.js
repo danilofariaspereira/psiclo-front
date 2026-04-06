@@ -26,7 +26,7 @@ export async function mount(container) {
     </select>
   </div>
 </div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+<div class="dash-charts-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
   <div class="card card--blue"><p class="card__title">Conversão de leads</p><p style="font-size:.75rem;color:rgba(255,255,255,.65);margin-bottom:.75rem">Proporção entre pendentes e convertidos.</p><div style="position:relative;height:180px"><canvas id="chart-conversion"></canvas></div></div>
   <div class="card card--blue"><p class="card__title">Origem dos leads</p><p style="font-size:.75rem;color:rgba(255,255,255,.65);margin-bottom:.75rem">De onde vieram seus leads.</p><div style="position:relative;height:180px"><canvas id="chart-source"></canvas></div></div>
 </div>
