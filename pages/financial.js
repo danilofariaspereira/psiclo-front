@@ -1,6 +1,3 @@
-import { authService } from '../services/auth.service.js';
-import { renderSidebar } from '../components/Sidebar.js';
-import { renderHeader } from '../components/Header.js';
 import { Modal } from '../components/Modal.js';
 import { notify } from '../utils/notify.js';
 import { currencyUtils } from '../utils/currency.js';
@@ -23,22 +20,52 @@ async function apiFetch(path, options = {}) {
   return res.status === 204 ? null : res.json();
 }
 
-async function init() {
-  const session = await authService.getSession();
-  if (!session) { window.location.href = './login.html'; return; }
-  store.set('professional', session.professional);
-  renderSidebar('financial');
-  renderHeader('Financeiro');
+export async function mount(container) {
+  container.innerHTML = `
+<div class="page-header">
+  <h1 class="page-title">Financeiro</h1>
+  <div style="display:flex;gap:.5rem">
+    <button class="btn btn--ghost" id="btn-set-goal"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Definir meta</button>
+    <button class="btn btn--primary" id="btn-add-expense">+ Nova despesa</button>
+  </div>
+</div>
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem">
+  <div class="stat-card"><p class="stat-card__label">Despesas do mês</p><p class="stat-card__value stat-card__value--red" id="f-expenses">—</p></div>
+  <div class="stat-card"><p class="stat-card__label">Faturamento do mês</p><p class="stat-card__value stat-card__value--green" id="f-paid">—</p></div>
+  <div class="stat-card"><p class="stat-card__label">Falta para a meta</p><p class="stat-card__value" id="f-remaining">—</p></div>
+  <div class="stat-card"><p class="stat-card__label">Meta do mês</p><p class="stat-card__value" id="f-goal">—</p></div>
+</div>
+<div class="card" style="margin-bottom:1.5rem">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem"><p class="card__title" style="margin:0">Despesas fixas</p></div>
+  <div id="expenses-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem"><p style="color:var(--color-text-muted);font-size:.85rem;grid-column:1/-1">Carregando...</p></div>
+</div>
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem">
+    <p class="card__title" style="margin:0">Pagamentos recebidos</p>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+      <input type="text" id="filter-client" class="form-input" placeholder="Filtrar por cliente..." style="width:180px;padding:6px 10px;font-size:.82rem" />
+      <input type="date" id="filter-date-from" class="form-input" style="width:140px;padding:6px 10px;font-size:.82rem" />
+      <input type="date" id="filter-date-to" class="form-input" style="width:140px;padding:6px 10px;font-size:.82rem" />
+      <button class="btn btn--ghost btn--sm" id="btn-filter-payments">Filtrar</button>
+    </div>
+  </div>
+  <div class="table-wrapper"><table class="table"><thead><tr><th>Cliente</th><th>Valor</th><th>Data</th><th>Forma</th></tr></thead><tbody id="payments-body"><tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--color-text-muted)">Carregando...</td></tr></tbody></table></div>
+  <div id="payments-total" style="text-align:right;margin-top:.75rem;font-size:.85rem;color:var(--color-text-muted)"></div>
+</div>
+`;
+
   loadAll();
   document.getElementById('btn-add-expense').addEventListener('click', openAddExpenseModal);
   document.getElementById('btn-set-goal').addEventListener('click', openSetGoalModal);
   document.getElementById('btn-filter-payments').addEventListener('click', loadPayments);
-  // Filtro em tempo real ao digitar nome do cliente
   document.getElementById('filter-client')?.addEventListener('input', loadPayments);
 }
 
+export function unmount() {
+  // nada a limpar
+}
+
 async function loadAll() {
-  // expenses e goal mudam raramente — usa cache de 5 min
   const cachedExpenses = store.cache.get('expenses');
   const cachedGoal = store.cache.get('financial_goal');
 
@@ -118,7 +145,6 @@ async function loadPayments() {
 
     const METHOD_PT = { pix: 'PIX', dinheiro: 'Dinheiro', cartao: 'Cartão', plano_saude: 'Plano de saúde' };
 
-    // Aplica filtros no frontend
     let filtered = payments.filter(p => {
       const name = (p.clients?.name || '').toLowerCase();
       const paidDate = p.paid_at ? p.paid_at.split('T')[0] : '';
@@ -149,11 +175,8 @@ async function loadPayments() {
       </tr>`;
     }).join('');
 
-    // Total dos resultados filtrados
     const total = filtered.reduce((s, p) => s + Number(p.amount), 0);
-    const clientLabel = clientFilter
-      ? `Total de ${clientFilter}: `
-      : 'Total do período: ';
+    const clientLabel = clientFilter ? `Total de ${clientFilter}: ` : 'Total do período: ';
     totalEl.innerHTML = `<strong>${clientLabel}${currencyUtils.format(total)}</strong> (${filtered.length} pagamento${filtered.length !== 1 ? 's' : ''})`;
   } catch {
     tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--color-error)">Erro ao carregar.</td></tr>`;
@@ -254,7 +277,6 @@ window.editExpense = (id, name, amount, category) => {
       const newCat = document.getElementById('exp-edit-cat').value;
       if (!newName || !newAmount) { notify.error('Preencha todos os campos.'); return; }
       try {
-        // Deleta e recria (API não tem PATCH para expenses)
         await apiFetch(`/financial/expenses/${id}`, { method: 'DELETE' });
         await apiFetch('/financial/expenses', { method: 'POST', body: JSON.stringify({ name: newName, amount: newAmount, category: newCat }) });
         store.cache.del('expenses');
@@ -264,5 +286,3 @@ window.editExpense = (id, name, amount, category) => {
     },
   });
 };
-
-init();
