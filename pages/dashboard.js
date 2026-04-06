@@ -142,14 +142,37 @@ async function loadCharts() {
     });
     const totalExpenses = (expenses || []).reduce((s, e) => s + Number(e.amount), 0);
     const revenue = summary.paid || 0;
-    const profit = Math.max(revenue - totalExpenses, 0);
-    const pct = revenue > 0 ? Math.round((profit / revenue) * 100) : 0;
+    const profit = revenue - totalExpenses;
+    const isNegative = profit < 0;
+    const pct = revenue > 0 ? Math.round((Math.abs(profit) / revenue) * 100) : 0;
+    const centerLabel = isNegative ? `-${pct}%` : `${pct}%`;
+    const centerColor = isNegative ? '#ef4444' : '#22c55e';
     if (summaryChart) summaryChart.destroy();
     summaryChart = new Chart(document.getElementById('chart-summary'), {
       type: 'doughnut',
-      data: { labels: ['Lucro', 'Despesas'], datasets: [{ data: [profit || 0.001, totalExpenses || 0.001], backgroundColor: ['#22c55e', 'rgba(255,255,255,0.15)'], borderWidth: 0 }] },
-      options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${currencyUtils.format(c.raw)}` } } } },
-      plugins: [{ id: 'center', beforeDraw(chart) { const { ctx, width, height } = chart; ctx.save(); ctx.font = 'bold 1.2rem Inter,sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(`${pct}%`, width / 2, height / 2); ctx.restore(); } }],
+      data: {
+        labels: isNegative ? ['Despesas', 'Faturamento'] : ['Lucro', 'Despesas'],
+        datasets: [{
+          data: isNegative
+            ? [totalExpenses || 0.001, revenue || 0.001]
+            : [profit || 0.001, totalExpenses || 0.001],
+          backgroundColor: isNegative
+            ? ['#ef4444', 'rgba(255,255,255,0.15)']
+            : ['#22c55e', 'rgba(255,255,255,0.15)'],
+          borderWidth: 0,
+        }],
+      },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${currencyUtils.format(c.raw === 0.001 ? 0 : c.raw)}` } } } },
+      plugins: [{ id: 'center', beforeDraw(chart) {
+        const { ctx, width, height } = chart;
+        ctx.save();
+        ctx.font = 'bold 1.2rem Inter,sans-serif';
+        ctx.fillStyle = centerColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(centerLabel, width / 2, height / 2);
+        ctx.restore();
+      }}],
     });
   } catch (_) {}
 }
