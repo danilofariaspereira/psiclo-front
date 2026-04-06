@@ -178,7 +178,7 @@ async function checkBirthdays() {
         <div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem">
           ${birthdayClients.map(c => {
             const phone = c.phone ? c.phone.replace(/\D/g,'') : '';
-            const msg = encodeURIComponent(`Olá ${c.name}! Aqui é ${profName}. Feliz aniversário!`);
+            const msg = encodeURIComponent(`Olá, ${c.name}! Tudo bem?\n\nAqui é ${profName}. Neste dia tão especial, quero te desejar um feliz aniversário!\n\nQue este novo ciclo seja repleto de saúde, leveza e muito autoconhecimento. É uma honra caminhar ao seu lado nessa jornada.\n\nConte sempre comigo. Um abraço!`);
             const waHref = phone ? `https://wa.me/55${phone}?text=${msg}` : null;
             return `<div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
               <div><p style="font-weight:600;font-size:.9rem;color:#1e293b">${esc(c.name)}</p><p style="font-size:.75rem;color:#64748b">${esc(c.phone) || '—'}</p></div>

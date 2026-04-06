@@ -65,6 +65,10 @@ export function renderSidebar(activePage) {
         <input type="checkbox" id="notif-toggle" ${getNotifPref() ? 'checked' : ''} />
       </div>
       <div class="sidebar__footer-actions">
+        <button class="sidebar__footer-btn" id="edit-phone-btn" title="Meu telefone WhatsApp">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.8a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Telefone
+        </button>
         <button class="sidebar__footer-btn" id="change-pass-btn" title="Alterar senha">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           Senha
@@ -107,6 +111,7 @@ export function renderSidebar(activePage) {
 
   document.getElementById('logout-btn').addEventListener('click', () => authService.logout());
   document.getElementById('change-pass-btn').addEventListener('click', showChangePasswordModal);
+  document.getElementById('edit-phone-btn').addEventListener('click', showEditPhoneModal);
 
   // Toggle de notificações — inicializa AudioContext na interação do usuário
   document.getElementById('notif-toggle').addEventListener('change', (e) => {
@@ -253,7 +258,62 @@ function showGlobalToast(title, subtitle = '', isAppointment = false) {
   setTimeout(() => { el.classList.add('appt-toast--hide'); setTimeout(() => el.remove(), 400); }, 8000);
 }
 
-function showChangePasswordModal() {
+function showEditPhoneModal() {
+  const existing = document.getElementById('edit-phone-modal');
+  if (existing) existing.remove();
+
+  const prof = store.get('professional');
+  const currentPhone = prof?.phone || '';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'edit-phone-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:14px;padding:2rem;width:100%;max-width:380px;box-shadow:0 16px 48px rgba(0,0,0,.25);">
+      <h3 style="font-size:1.1rem;font-weight:700;color:#1a237e;margin-bottom:.25rem;">Meu telefone WhatsApp</h3>
+      <p style="font-size:.82rem;color:#64748b;margin-bottom:1.2rem;">Usado nas mensagens de parabenização e contato com clientes.</p>
+      <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.75rem;">
+        <label style="font-size:.8rem;font-weight:600;color:#64748b;">DDD + número (somente dígitos)</label>
+        <input id="ep-phone" type="tel" placeholder="21999999999" value="${currentPhone}" style="padding:9px 12px;border:1.5px solid #dde1e7;border-radius:8px;font-size:.9rem;" />
+      </div>
+      <p id="ep-error" style="color:#c62828;font-size:.8rem;min-height:1rem;margin-bottom:.5rem;"></p>
+      <div style="display:flex;gap:.5rem;">
+        <button id="ep-cancel" style="flex:1;padding:.7rem;border:1.5px solid #dde1e7;border-radius:6px;background:#fff;cursor:pointer;font-weight:600;color:#64748b;">Cancelar</button>
+        <button id="ep-save" style="flex:1;padding:.7rem;border:none;border-radius:6px;background:linear-gradient(135deg,#1a237e,#0288d1);color:#fff;cursor:pointer;font-weight:600;">Salvar</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  document.getElementById('ep-cancel').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+  document.getElementById('ep-save').addEventListener('click', async () => {
+    const phone = document.getElementById('ep-phone').value.replace(/\D/g, '');
+    const errEl = document.getElementById('ep-error');
+    const btn = document.getElementById('ep-save');
+
+    if (phone && phone.length < 10) { errEl.textContent = 'Número inválido. Use DDD + número.'; return; }
+
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    try {
+      const res = await fetch(`${API_URL}/auth/me`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ phone: phone || null }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      // Atualiza o store
+      const prof = store.get('professional');
+      if (prof) store.set('professional', { ...prof, phone: json.phone });
+      overlay.remove();
+    } catch (err) {
+      errEl.textContent = err.message;
+      btn.disabled = false; btn.textContent = 'Salvar';
+    }
+  });
+}
   const existing = document.getElementById('change-pass-modal');
   if (existing) existing.remove();
 
