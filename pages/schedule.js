@@ -134,7 +134,17 @@ async function loadDay(date) {
     apiFetch(`/schedule/slots?date=${dateStr}`).catch(() => ({ slots: [] })),
     apiFetch(`/schedule/appointments?date=${dateStr}`).catch(() => []),
   ]);
-  renderSlots(slotsData.slots || []);
+
+  // Verifica se o dia está bloqueado
+  const isBlocked = slotsData.available === false && slotsData.reason === 'blocked_day';
+  blockBtn.dataset.blocked = isBlocked ? 'true' : 'false';
+  blockBtn.textContent = isBlocked ? 'Desbloquear dia' : 'Bloquear dia';
+
+  if (isBlocked) {
+    document.getElementById('slots-container').innerHTML = `<p style="color:var(--color-error);font-size:.9rem;font-weight:600">Dia bloqueado — nenhum horario disponivel.</p>`;
+  } else {
+    renderSlots(slotsData.slots || []);
+  }
   renderAppts(appts, dateStr);
 }
 
@@ -170,23 +180,101 @@ function renderAppts(appts, dateStr) {
 }
 
 async function openNewApptModal() {
-  const clients = await apiFetch('/clients/active');
+  let clients = [];
+  try { clients = await apiFetch('/clients/active') || []; } catch {}
+
+  // Remove duplicatas por nome (mantém o mais recente)
+  const seen = new Set();
+  const uniqueClients = clients.filter(c => {
+    const key = c.name.trim().toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
   Modal.open({
     title: 'Novo agendamento', confirmLabel: 'Agendar',
     content: `
-      <div class="form-group"><label class="form-label">Cliente</label><select id="appt-client" class="form-select"><option value="">Selecione...</option>${(clients || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+      <div class="form-group">
+        <label class="form-label">Cliente</label>
+        <div style="position:relative">
+          <input type="text" id="appt-client-search" class="form-input" placeholder="Digite o nome do cliente..." autocomplete="off" />
+          <input type="hidden" id="appt-client" />
+          <div id="appt-client-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:100;max-height:200px;overflow-y:auto;margin-top:2px"></div>
+        </div>
+      </div>
+      <div class="form-group" id="appt-client-info" style="display:none;background:#f8fafc;border-radius:8px;padding:.75rem;border:1px solid #e2e8f0;font-size:.85rem;color:#475569">
+        <div id="appt-client-details"></div>
+      </div>
       <div class="form-group"><label class="form-label">Data e horário</label><input type="datetime-local" id="appt-datetime" class="form-input" /></div>
       <div class="form-group"><label class="form-label">Modalidade</label><select id="appt-modality" class="form-select"><option value="online">Online</option><option value="presencial">Presencial</option></select></div>`,
     onConfirm: async () => {
       const clientId = document.getElementById('appt-client').value;
       const dt = document.getElementById('appt-datetime').value;
       const modality = document.getElementById('appt-modality').value;
-      if (!clientId || !dt) { notify.warning('Preencha todos os campos.'); return; }
+      if (!clientId || !dt) { notify.warning('Selecione um cliente e preencha a data.'); return; }
       try {
         await apiFetch('/schedule/appointments', { method: 'POST', body: JSON.stringify({ client_id: clientId, scheduled_at: new Date(dt).toISOString(), modality, duration: scheduleConfig?.session_duration || 50 }) });
         notify.success('Agendamento criado.');
       } catch (e) { notify.error(e.message.includes('409') ? 'Horário já ocupado.' : 'Erro ao agendar.'); }
     },
+  });
+
+  // Autocomplete
+  const searchInput = document.getElementById('appt-client-search');
+  const hiddenInput = document.getElementById('appt-client');
+  const dropdown    = document.getElementById('appt-client-dropdown');
+  const infoBox     = document.getElementById('appt-client-info');
+  const infoDetails = document.getElementById('appt-client-details');
+
+  function showDropdown(filtered) {
+    if (!filtered.length) { dropdown.style.display = 'none'; return; }
+    dropdown.style.display = 'block';
+    dropdown.innerHTML = filtered.map(c => `
+      <div data-id="${esc(c.id)}" data-name="${esc(c.name)}" data-phone="${esc(c.phone||'')}" data-email="${esc(c.email||'')}" data-birth="${esc(c.birth_date||'')}"
+        style="padding:.6rem 1rem;cursor:pointer;font-size:.88rem;color:#1e293b;border-bottom:1px solid #f1f5f9"
+        onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'">
+        ${esc(c.name)}${c.phone ? `<span style="color:#94a3b8;font-size:.78rem;margin-left:.5rem">${esc(c.phone)}</span>` : ''}
+      </div>`).join('');
+
+    dropdown.querySelectorAll('[data-id]').forEach(item => {
+      item.addEventListener('click', () => {
+        hiddenInput.value = item.dataset.id;
+        searchInput.value = item.dataset.name;
+        dropdown.style.display = 'none';
+        // Mostra dados do cliente
+        const parts = [];
+        if (item.dataset.phone) parts.push(`Telefone: ${item.dataset.phone}`);
+        if (item.dataset.email) parts.push(`E-mail: ${item.dataset.email}`);
+        if (item.dataset.birth) parts.push(`Nascimento: ${new Date(item.dataset.birth + 'T12:00:00').toLocaleDateString('pt-BR')}`);
+        if (parts.length) {
+          infoDetails.innerHTML = parts.join(' &nbsp;·&nbsp; ');
+          infoBox.style.display = 'block';
+        }
+      });
+    });
+  }
+
+  searchInput.addEventListener('input', () => {
+    hiddenInput.value = '';
+    infoBox.style.display = 'none';
+    const q = searchInput.value.trim().toLowerCase();
+    if (!q) { dropdown.style.display = 'none'; return; }
+    showDropdown(uniqueClients.filter(c => c.name.toLowerCase().includes(q)).slice(0, 8));
+  });
+
+  searchInput.addEventListener('focus', () => {
+    if (!hiddenInput.value && searchInput.value.trim()) {
+      const q = searchInput.value.trim().toLowerCase();
+      showDropdown(uniqueClients.filter(c => c.name.toLowerCase().includes(q)).slice(0, 8));
+    }
+  });
+
+  document.addEventListener('click', function closeDD(e) {
+    if (!e.target.closest('#appt-client-search') && !e.target.closest('#appt-client-dropdown')) {
+      dropdown.style.display = 'none';
+      document.removeEventListener('click', closeDD);
+    }
   });
 }
 
