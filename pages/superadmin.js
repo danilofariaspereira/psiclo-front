@@ -610,15 +610,19 @@ const LEADS_WA_NUMBER = '5521993350228';
 
 const LEADS_WA_MESSAGES = {
   'Comecar agora - Banner': (name) =>
-    `Ola, ${name}.\n\nVi que voce clicou em Comecar agora no nosso site.\n\nO PSICLO e um sistema de gestao completo para psicologos: agenda online, financeiro automatico, gestao de leads e landing page propria, tudo em um so lugar.\n\nGostaria de entender melhor como funciona e verificar se faz sentido para a sua clinica?\n\nEstou a disposicao para conversar.`,
+    `Ola, ${name}!\n\nQue alegria receber o seu contato atraves do site do PSICLO Gestao, seja muito bem-vindo.\n\nFicamos muito felizes com o seu interesse em comecar agora com a nossa plataforma.\n\nNosso objetivo e justamente facilitar a sua rotina e ajudar voce a ter mais organizacao, controle e crescimento no seu trabalho.\n\nSe tiver qualquer duvida ou quiser conhecer melhor todas as funcionalidades do sistema, vai ser um prazer te ajudar e te mostrar tudo com calma.\n\nMe conta: qual o melhor momento para conversarmos?\n\nAssim conseguimos falar com tranquilidade e entender exatamente o que voce precisa.`,
+
   'Quero experimentar - Menu': (name) =>
-    `Ola, ${name}.\n\nRecebi seu contato pelo menu do site do PSICLO.\n\nSe tiver alguma duvida sobre o sistema ou quiser saber mais sobre as funcionalidades, estou aqui para ajudar.\n\nQual seria o melhor momento para conversarmos?`,
+    `Ola, ${name}!\n\nQue alegria receber o seu contato atraves do site do PSICLO Gestao, seja muito bem-vindo.\n\nFicamos muito felizes que voce quer experimentar o nosso sistema.\n\nNosso objetivo e justamente facilitar a sua rotina e ajudar voce a ter mais organizacao, controle e crescimento no seu trabalho.\n\nSe tiver qualquer duvida ou quiser conhecer melhor todas as funcionalidades, vai ser um prazer te mostrar tudo com calma.\n\nMe conta: qual o melhor momento para conversarmos?\n\nAssim conseguimos falar com tranquilidade e entender exatamente o que voce precisa.`,
+
   'Comecar agora - Preco': (name) =>
-    `Ola, ${name}.\n\nVi que voce se interessou pelo plano do PSICLO.\n\nO plano e unico, com tudo incluido por R$ 69,90 por mes: agenda, financeiro, leads, landing page e suporte.\n\nPosso te passar mais detalhes sobre o que esta incluido e como funciona o processo de ativacao?`,
+    `Ola, ${name}!\n\nQue alegria receber o seu contato atraves do site do PSICLO Gestao, seja muito bem-vindo.\n\nFicamos muito felizes com o seu interesse no nosso plano.\n\nO PSICLO tem um plano unico com tudo incluido: agenda online, controle financeiro, gestao de leads, landing page profissional e suporte. Tudo por R$ 69,90 por mes.\n\nQueremos te mostrar como funciona na pratica e garantir que voce tenha todas as informacoes para tomar a melhor decisao.\n\nMe conta: qual o melhor momento para conversarmos?\n\nAssim conseguimos falar com tranquilidade e entender exatamente o que voce precisa.`,
+
   'Quero ter acesso - Mapas': (name) =>
-    `Ola, ${name}.\n\nVi que voce se interessou pelos mapas de calor do PSICLO.\n\nEsse recurso mostra quais horarios e dias concentram mais atendimentos, e quais meses e formas de pagamento sao mais rentaveis para a sua clinica.\n\nGostaria de ver uma demonstracao de como isso funciona na pratica?`,
+    `Ola, ${name}!\n\nQue alegria receber o seu contato atraves do site do PSICLO Gestao, seja muito bem-vindo.\n\nFicamos muito felizes com o seu interesse nos nossos mapas de calor.\n\nEsse recurso foi desenvolvido para ajudar voce a entender melhor os padroes da sua clinica: quais horarios concentram mais atendimentos, quais meses sao mais rentaveis e como seus pacientes preferem pagar.\n\nSao dados reais que ajudam a tomar decisoes mais inteligentes para o seu negocio.\n\nMe conta: qual o melhor momento para conversarmos?\n\nAssim conseguimos falar com tranquilidade e entender exatamente o que voce precisa.`,
+
   'Quero conhecer o PSICLO': (name) =>
-    `Ola, ${name}.\n\nRecebi seu contato pelo formulario do site do PSICLO.\n\nEstou aqui para responder suas duvidas e ajudar no que precisar.\n\nComo posso te ajudar?`,
+    `Ola, ${name}!\n\nQue alegria receber o seu contato atraves do site do PSICLO Gestao, seja muito bem-vindo.\n\nFicamos muito felizes com o seu interesse em fazer parte da nossa plataforma.\n\nNosso objetivo e justamente facilitar a sua rotina e ajudar voce a ter mais organizacao, controle e crescimento no seu trabalho.\n\nSe tiver qualquer duvida ou quiser conhecer melhor todas as funcionalidades do sistema, vai ser um prazer te ajudar e te mostrar tudo com calma.\n\nMe conta: qual o melhor momento para conversarmos?\n\nAssim conseguimos falar com tranquilidade e entender exatamente o que voce precisa.`,
 };
 
 function leadsWaMsg(source, name) {
