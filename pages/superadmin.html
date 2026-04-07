@@ -289,15 +289,14 @@
         <div class="sa-field"><label>Plano</label><input type="text" value="Premium" disabled style="opacity:.6;cursor:not-allowed" /></div>
       </div>
       <div class="sa-field">
-        <label>Módulos habilitados</label>
-        <div style="display:flex;flex-wrap:wrap;gap:.5rem .75rem;margin-top:.35rem">
-          <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="prof-module-check" value="dashboard" checked /> Dashboard</label>
-          <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="prof-module-check" value="leads" checked /> Leads</label>
-          <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="prof-module-check" value="clients" checked /> Clientes</label>
-          <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="prof-module-check" value="schedule" checked /> Agenda</label>
-          <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="prof-module-check" value="financial" checked /> Financeiro</label>
-          <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="prof-module-check" value="balance" checked /> Balanço</label>
+        <label>Landing page e Leads</label>
+        <div style="display:flex;align-items:center;gap:.75rem;margin-top:.35rem">
+          <label style="display:flex;align-items:center;gap:.4rem;font-size:.88rem;cursor:pointer">
+            <input type="checkbox" id="profHasLeads" checked />
+            Habilitar módulo de Leads e agendamentos externos
+          </label>
         </div>
+        <p style="font-size:.75rem;color:rgba(255,255,255,.45);margin-top:.3rem">Desmarque se o profissional não tiver landing page.</p>
       </div>
       <p class="sa-error" id="profError"></p>
       <button class="sa-btn-primary sa-btn-full" id="saCreateProfBtn">Criar profissional</button>

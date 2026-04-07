@@ -318,7 +318,7 @@ async function loadProfessionals() {
       <td><span class="sa-badge ${p.active ? 'sa-badge--active' : 'sa-badge--inactive'}">${p.active ? 'Ativo' : 'Inativo'}</span></td>
       <td style="text-align:center">
         <button class="sa-btn-sm" onclick="editProf('${esc(p.id)}','${esc(p.name)}','${esc(p.email)}')">Editar</button>
-        <button class="sa-btn-sm" onclick="editProfModules('${esc(p.id)}','${esc(p.name)}',${JSON.stringify(p.features || null)})">Módulos</button>
+        <button class="sa-btn-sm" onclick="editProfModules('${esc(p.id)}','${esc(p.name)}',${JSON.stringify(p.features || null)})">Landing page</button>
         <button class="sa-btn-sm" onclick="toggleProf('${esc(p.id)}',${p.active})">${p.active ? 'Desativar' : 'Ativar'}</button>
         <button class="sa-btn-sm sa-btn-warning" onclick="resetProfPass('${esc(p.id)}','${esc(p.name)}')">Resetar senha</button>
         <button class="sa-btn-sm sa-btn-danger" onclick="deleteProf('${esc(p.id)}','${esc(p.name)}')">Excluir</button>
@@ -344,20 +344,19 @@ async function loadDeletedProfessionals() {
 }
 
 window.editProfModules = (id, name, currentFeatures) => {
-  const ALL = ['dashboard','leads','clients','schedule','financial','balance'];
-  const LABELS = { dashboard:'Dashboard', leads:'Leads', clients:'Clientes', schedule:'Agenda', financial:'Financeiro', balance:'Balanco' };
-  const enabled = currentFeatures || ALL;
+  const hasLeads = !currentFeatures || currentFeatures.includes('leads');
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;';
   overlay.innerHTML = `
-    <div class="sa-modal" style="max-width:380px;">
-      <h3 class="sa-modal__title">Modulos — ${esc(name)}</h3>
-      <p class="sa-modal__sub">Selecione os modulos que este profissional pode acessar.</p>
-      <div style="display:flex;flex-direction:column;gap:.5rem;margin:.75rem 0">
-        ${ALL.map(m => `<label style="display:flex;align-items:center;gap:.5rem;font-size:.88rem;cursor:pointer">
-          <input type="checkbox" class="mod-check" value="${m}" ${enabled.includes(m) ? 'checked' : ''} />
-          ${LABELS[m]}
-        </label>`).join('')}
+    <div class="sa-modal" style="max-width:360px;">
+      <h3 class="sa-modal__title">Landing page — ${esc(name)}</h3>
+      <p class="sa-modal__sub">Define se este profissional tem acesso ao modulo de Leads e agendamentos externos.</p>
+      <div style="margin:1rem 0">
+        <label style="display:flex;align-items:center;gap:.5rem;font-size:.9rem;cursor:pointer">
+          <input type="checkbox" id="editHasLeads" ${hasLeads ? 'checked' : ''} />
+          Habilitar Leads e agendamentos externos
+        </label>
+        <p style="font-size:.75rem;color:rgba(255,255,255,.45);margin-top:.4rem">Desmarque se o profissional nao tiver landing page.</p>
       </div>
       <p class="sa-error" id="modError"></p>
       <div style="display:flex;gap:.5rem;margin-top:.5rem">
@@ -369,9 +368,8 @@ window.editProfModules = (id, name, currentFeatures) => {
   document.getElementById('modCancel').addEventListener('click', () => overlay.remove());
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   document.getElementById('modSave').addEventListener('click', async () => {
-    const checked = [...overlay.querySelectorAll('.mod-check:checked')].map(c => c.value);
-    if (!checked.includes('dashboard')) { document.getElementById('modError').textContent = 'Dashboard e obrigatorio.'; return; }
-    const features = checked.length === ALL.length ? null : checked;
+    const hasLeadsNow = document.getElementById('editHasLeads').checked;
+    const features = hasLeadsNow ? null : ['dashboard','clients','schedule','financial','balance'];
     const { ok, data } = await api(`/professionals/${id}`, { method: 'PATCH', body: JSON.stringify({ features }) });
     if (!ok) { document.getElementById('modError').textContent = data.error; return; }
     overlay.remove();
@@ -459,9 +457,9 @@ $('saCreateProfBtn').addEventListener('click', async () => {
   if (!name || !email) { err.textContent = 'Nome e e-mail obrigatórios.'; return; }
   btn.disabled = true; btn.textContent = 'Criando...'; err.textContent = '';
 
-  // Coleta modulos selecionados
-  const checkedModules = [...document.querySelectorAll('.prof-module-check:checked')].map(c => c.value);
-  const features = checkedModules.length === 6 ? null : checkedModules; // null = todos
+  // features: null = todos os modulos. Sem leads = apenas leads desabilitado
+  const hasLeads = document.getElementById('profHasLeads').checked;
+  const features = hasLeads ? null : ['dashboard','clients','schedule','financial','balance'];
 
   const { ok, data } = await api('/professionals', {
     method: 'POST',
