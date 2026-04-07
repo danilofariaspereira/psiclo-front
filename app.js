@@ -144,4 +144,30 @@ function hrefToRoute(href) {
 
 window.addEventListener('hashchange', () => navigate(getRoute()));
 
+// ── Logout por inatividade — 8 horas sem interacao ───────────
+const INACTIVITY_MS = 8 * 60 * 60 * 1000; // 8 horas
+let _inactivityTimer = null;
+
+function resetInactivityTimer() {
+  clearTimeout(_inactivityTimer);
+  _inactivityTimer = setTimeout(async () => {
+    // So faz logout se houver sessao ativa
+    const session = await authService.getSession().catch(() => null);
+    if (!session) return;
+    await authService.logout();
+    // Mostra aviso antes de recarregar
+    const msg = document.createElement('div');
+    msg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:99999;';
+    msg.innerHTML = '<div style="background:#fff;border-radius:12px;padding:2rem;text-align:center;max-width:340px"><p style="font-weight:700;margin-bottom:.5rem">Sessao encerrada</p><p style="font-size:.88rem;color:#64748b">Voce ficou inativo por 8 horas. Faca login novamente.</p></div>';
+    document.body.appendChild(msg);
+    setTimeout(() => window.location.replace('/'), 2500);
+  }, INACTIVITY_MS);
+}
+
+// Reinicia o timer a cada interacao do usuario
+['mousemove', 'keydown', 'click', 'touchstart', 'scroll'].forEach(evt => {
+  window.addEventListener(evt, resetInactivityTimer, { passive: true });
+});
+resetInactivityTimer(); // inicia ao carregar
+
 boot();
