@@ -11,6 +11,8 @@ function setNotifPref(enabled) {
   document.cookie = `notif=${enabled ? 'on' : 'off'};path=/;max-age=31536000;SameSite=Lax`;
 }
 
+const ALL_MODULES = ['dashboard', 'leads', 'clients', 'schedule', 'financial', 'balance'];
+
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard',   href: 'dashboard.html',  icon: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>' },
   { id: 'leads',     label: 'Leads',        href: 'leads.html',      icon: '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
@@ -25,6 +27,9 @@ export function renderSidebar(activePage) {
   if (!sidebar) return;
 
   const prof = store.get('professional');
+  const features = prof?.features || null; // null = todos habilitados
+  const enabledModules = features ? features : ALL_MODULES;
+  const visibleItems = NAV_ITEMS.filter(item => enabledModules.includes(item.id));
   const initials = prof?.name ? prof.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : '?';
   const avatarContent = prof?.avatar_url
     ? `<img src="${prof.avatar_url}" alt="foto" />`
@@ -37,7 +42,7 @@ export function renderSidebar(activePage) {
     </div>
     <nav class="sidebar__nav" aria-label="Menu principal">
       <ul>
-        ${NAV_ITEMS.map(item => `
+        ${visibleItems.map(item => `
           <li>
             <a href="${item.href}"
                class="sidebar__link ${activePage === item.id ? 'sidebar__link--active' : ''}"

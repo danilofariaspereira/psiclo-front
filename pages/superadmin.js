@@ -314,10 +314,11 @@ async function loadProfessionals() {
     <thead><tr><th>Nome</th><th>E-mail</th><th>CRP</th><th>CPF</th><th>Plano</th><th>Status</th><th style="text-align:center">Ações</th></tr></thead>
     <tbody>${data.map(p => `<tr>
       <td>${esc(p.name)}</td><td>${esc(p.email)}</td><td>${esc(p.crp) || '—'}</td><td>${esc(p.cpf) || '—'}</td>
-      <td><span class="sa-badge sa-badge--${esc(p.plan)}">${esc(p.plan)}</span></td>
+      <td><span class="sa-badge sa-badge--pro">Premium</span></td>
       <td><span class="sa-badge ${p.active ? 'sa-badge--active' : 'sa-badge--inactive'}">${p.active ? 'Ativo' : 'Inativo'}</span></td>
       <td style="text-align:center">
         <button class="sa-btn-sm" onclick="editProf('${esc(p.id)}','${esc(p.name)}','${esc(p.email)}')">Editar</button>
+        <button class="sa-btn-sm" onclick="editProfModules('${esc(p.id)}','${esc(p.name)}',${JSON.stringify(p.features || null)})">Módulos</button>
         <button class="sa-btn-sm" onclick="toggleProf('${esc(p.id)}',${p.active})">${p.active ? 'Desativar' : 'Ativar'}</button>
         <button class="sa-btn-sm sa-btn-warning" onclick="resetProfPass('${esc(p.id)}','${esc(p.name)}')">Resetar senha</button>
         <button class="sa-btn-sm sa-btn-danger" onclick="deleteProf('${esc(p.id)}','${esc(p.name)}')">Excluir</button>
@@ -341,6 +342,42 @@ async function loadDeletedProfessionals() {
       <td style="text-align:center"><button class="sa-btn-sm sa-btn-success" onclick="restoreProf('${esc(p.id)}','${esc(p.name)}')">Restaurar</button></td>
     </tr>`).join('')}</tbody></table>`;
 }
+
+window.editProfModules = (id, name, currentFeatures) => {
+  const ALL = ['dashboard','leads','clients','schedule','financial','balance'];
+  const LABELS = { dashboard:'Dashboard', leads:'Leads', clients:'Clientes', schedule:'Agenda', financial:'Financeiro', balance:'Balanco' };
+  const enabled = currentFeatures || ALL;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem;';
+  overlay.innerHTML = `
+    <div class="sa-modal" style="max-width:380px;">
+      <h3 class="sa-modal__title">Modulos — ${esc(name)}</h3>
+      <p class="sa-modal__sub">Selecione os modulos que este profissional pode acessar.</p>
+      <div style="display:flex;flex-direction:column;gap:.5rem;margin:.75rem 0">
+        ${ALL.map(m => `<label style="display:flex;align-items:center;gap:.5rem;font-size:.88rem;cursor:pointer">
+          <input type="checkbox" class="mod-check" value="${m}" ${enabled.includes(m) ? 'checked' : ''} />
+          ${LABELS[m]}
+        </label>`).join('')}
+      </div>
+      <p class="sa-error" id="modError"></p>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem">
+        <button class="sa-btn-primary" style="flex:1;justify-content:center;background:rgba(255,255,255,.15)" id="modCancel">Cancelar</button>
+        <button class="sa-btn-primary" style="flex:1;justify-content:center" id="modSave">Salvar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.getElementById('modCancel').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('modSave').addEventListener('click', async () => {
+    const checked = [...overlay.querySelectorAll('.mod-check:checked')].map(c => c.value);
+    if (!checked.includes('dashboard')) { document.getElementById('modError').textContent = 'Dashboard e obrigatorio.'; return; }
+    const features = checked.length === ALL.length ? null : checked;
+    const { ok, data } = await api(`/professionals/${id}`, { method: 'PATCH', body: JSON.stringify({ features }) });
+    if (!ok) { document.getElementById('modError').textContent = data.error; return; }
+    overlay.remove();
+    loadProfessionals();
+  });
+};
 
 window.toggleProf = async (id, active) => {
   await api(`/professionals/${id}`, { method: 'PATCH', body: JSON.stringify({ active: !active }) });
@@ -421,9 +458,21 @@ $('saCreateProfBtn').addEventListener('click', async () => {
   const name = $('profName').value.trim(), email = $('profEmail').value.trim();
   if (!name || !email) { err.textContent = 'Nome e e-mail obrigatórios.'; return; }
   btn.disabled = true; btn.textContent = 'Criando...'; err.textContent = '';
+
+  // Coleta modulos selecionados
+  const checkedModules = [...document.querySelectorAll('.prof-module-check:checked')].map(c => c.value);
+  const features = checkedModules.length === 6 ? null : checkedModules; // null = todos
+
   const { ok, data } = await api('/professionals', {
     method: 'POST',
-    body: JSON.stringify({ name, email, crp: $('profCrp').value.trim(), cpf: $('profCpf').value.trim(), phone: $('profPhone').value.trim(), plan: $('profPlan').value }),
+    body: JSON.stringify({
+      name, email,
+      crp: $('profCrp').value.trim(),
+      cpf: $('profCpf').value.trim(),
+      phone: $('profPhone').value.trim(),
+      plan: 'premium',
+      features,
+    }),
   });
   btn.disabled = false; btn.textContent = 'Criar profissional';
   if (!ok) { err.textContent = data.error; return; }

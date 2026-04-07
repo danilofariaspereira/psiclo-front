@@ -286,9 +286,17 @@
       </div>
       <div class="sa-field-row">
         <div class="sa-field"><label>Telefone</label><input type="tel" id="profPhone" placeholder="(21) 99999-9999" /></div>
-        <div class="sa-field">
-          <label>Plano</label>
-          <select id="profPlan"><option value="free">Free</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select>
+        <div class="sa-field"><label>Plano</label><input type="text" value="Premium" disabled style="opacity:.6;cursor:not-allowed" /></div>
+      </div>
+      <div class="sa-field">
+        <label>Módulos habilitados</label>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem .75rem;margin-top:.35rem">
+          <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="prof-module-check" value="dashboard" checked /> Dashboard</label>
+          <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="prof-module-check" value="leads" checked /> Leads</label>
+          <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="prof-module-check" value="clients" checked /> Clientes</label>
+          <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="prof-module-check" value="schedule" checked /> Agenda</label>
+          <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="prof-module-check" value="financial" checked /> Financeiro</label>
+          <label style="display:flex;align-items:center;gap:.3rem;font-size:.85rem;cursor:pointer"><input type="checkbox" class="prof-module-check" value="balance" checked /> Balanço</label>
         </div>
       </div>
       <p class="sa-error" id="profError"></p>
