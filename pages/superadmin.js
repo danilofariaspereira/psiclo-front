@@ -700,12 +700,19 @@ async function loadLeads() {
               ? `<a href="${waHref}" target="_blank" rel="noopener" class="sa-btn-sm" style="display:inline-flex;align-items:center;gap:.3rem">${WA_SVG} WhatsApp</a>`
               : `<button class="sa-btn-sm" disabled style="opacity:.4">${WA_SVG} WhatsApp</button>`
             }
-            <select class="sa-btn-sm" style="padding:3px 6px;font-size:.75rem" onchange="updateLeadStatus('${esc(l.id)}', this.value, this)">
-              <option value="new"       ${l.status==='new'       ?'selected':''}>Novo</option>
-              <option value="contacted" ${l.status==='contacted' ?'selected':''}>Contactado</option>
-              <option value="converted" ${l.status==='converted' ?'selected':''}>Convertido</option>
-              <option value="lost"      ${l.status==='lost'      ?'selected':''}>Perdido</option>
-            </select>
+            <div class="sa-status-menu" style="position:relative;display:inline-block">
+              <button class="sa-btn-sm sa-status-btn" onclick="toggleStatusMenu(this)" style="min-width:90px;justify-content:space-between;display:inline-flex;align-items:center;gap:.3rem">
+                ${{ new:'Novo', contacted:'Contactado', converted:'Convertido', lost:'Perdido' }[l.status] || l.status}
+                <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="sa-status-dropdown" hidden style="position:absolute;right:0;top:calc(100% + 4px);background:var(--sa-card-bg,#1e2a3a);border:1px solid rgba(255,255,255,.15);border-radius:8px;min-width:120px;z-index:100;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+                ${['new','contacted','converted','lost'].map(s => {
+                  const labels = { new:'Novo', contacted:'Contactado', converted:'Convertido', lost:'Perdido' };
+                  const colors = { new:'rgba(255,255,255,.7)', contacted:'#fde68a', converted:'#a5f3c0', lost:'#fca5a5' };
+                  return `<button onclick="updateLeadStatus('${esc(l.id)}','${s}',this.closest('.sa-status-menu').querySelector('.sa-status-btn'),this.closest('.sa-status-dropdown'))" style="display:block;width:100%;text-align:left;padding:.45rem .85rem;background:none;border:none;cursor:pointer;font-size:.78rem;color:${colors[s]};font-family:inherit" onmouseover="this.style.background='rgba(255,255,255,.08)'" onmouseout="this.style.background='none'">${labels[s]}</button>`;
+                }).join('')}
+              </div>
+            </div>
           </td>
         </tr>`;
       }).join('')}</tbody>
@@ -742,8 +749,27 @@ function renderLeadsCharts(leads) {
   });
 }
 
-window.updateLeadStatus = async (id, status, selectEl) => {
-  selectEl.disabled = true;
+window.toggleStatusMenu = (btn) => {
+  const dropdown = btn.nextElementSibling;
+  const isHidden = dropdown.hidden;
+  // Fecha todos os outros dropdowns abertos
+  document.querySelectorAll('.sa-status-dropdown').forEach(d => { d.hidden = true; });
+  dropdown.hidden = !isHidden;
+  // Fecha ao clicar fora
+  if (!isHidden) return;
+  setTimeout(() => {
+    document.addEventListener('click', function close(e) {
+      if (!btn.closest('.sa-status-menu').contains(e.target)) {
+        dropdown.hidden = true;
+        document.removeEventListener('click', close);
+      }
+    });
+  }, 0);
+};
+
+window.updateLeadStatus = async (id, status, btn, dropdown) => {
+  if (dropdown) dropdown.hidden = true;
+  if (btn) btn.disabled = true;
   const res = await fetch(`https://psiclo-back.vercel.app/api/psiclo-leads/${id}/status`, {
     method: 'PATCH',
     credentials: 'include',
@@ -751,7 +777,7 @@ window.updateLeadStatus = async (id, status, selectEl) => {
     body: JSON.stringify({ status }),
   });
   const ok = res.ok;
-  selectEl.disabled = false;
+  if (btn) btn.disabled = false;
   if (!ok) { alert('Erro ao atualizar status.'); return; }
   loadLeads();
 };
